@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+pydantic
+python-dotenv
+pandas
+numpy
+scikit-learn
+joblib
+groq
+python-jose[cryptography]
+passlib[bcrypt]
+psycopg2-binary
+httpx
