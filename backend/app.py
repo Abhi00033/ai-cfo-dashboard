@@ -6,14 +6,19 @@ from pydantic import BaseModel
 from typing import List, Optional
 import pandas as pd
 from datetime import datetime
+from fastapi import UploadFile, File
+import io
 import json
 import os
 # from openai import OpenAI
 from groq import Groq
 from dotenv import load_dotenv
-
+from fastapi import UploadFile, File, HTTPException, Depends
 from models import TransactionModel, get_db
 from sqlalchemy.orm import Session
+
+
+
 
 app = FastAPI(
     title="AI CFO Platform",
@@ -108,6 +113,139 @@ async def get_transactions(db: Session = Depends(get_db)):
         }
         for t in transactions
     ]
+
+
+
+@app.post("/transactions/upload-csv")
+async def upload_csv(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    try:
+
+        if not file.filename.endswith(".csv"):
+
+            raise HTTPException(
+                status_code=400,
+                detail="Please upload a CSV file"
+            )
+
+        contents = await file.read()
+
+        df = pd.read_csv(
+            io.StringIO(
+                contents.decode("utf-8")
+            )
+        )
+
+        required_columns = [
+            "amount",
+            "category",
+            "description",
+            "type"
+        ]
+
+        missing_columns = [
+            col
+            for col in required_columns
+            if col not in df.columns
+        ]
+
+        if missing_columns:
+
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing columns: {', '.join(missing_columns)}"
+            )
+
+        valid_categories = [
+            "Revenue",
+            "Operations",
+            "Investment",
+            "Marketing",
+            "Sales",
+            "HR",
+            "Technology",
+            "Finance"
+        ]
+
+        valid_types = [
+            "income",
+            "expense"
+        ]
+
+        transactions_to_insert = []
+
+        # Validate ALL rows first
+        for index, row in df.iterrows():
+
+            amount = row["amount"]
+            category = str(row["category"]).strip()
+            description = str(row["description"]).strip()
+            tx_type = str(row["type"]).strip().lower()
+
+            if pd.isna(amount):
+
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Row {index + 2}: Amount is required"
+                )
+
+            if not description:
+
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Row {index + 2}: Description is required"
+                )
+
+            if category not in valid_categories:
+
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Row {index + 2}: Invalid category '{category}'"
+                )
+
+            if tx_type not in valid_types:
+
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Row {index + 2}: Type must be income or expense"
+                )
+
+            transactions_to_insert.append(
+                TransactionModel(
+                    amount=float(amount),
+                    category=category,
+                    description=description,
+                    type=tx_type
+                )
+            )
+
+        # Insert only if ALL rows are valid
+        for transaction in transactions_to_insert:
+
+            db.add(transaction)
+
+        db.commit()
+
+        return {
+            "success": True,
+            "message": f"{len(transactions_to_insert)} transactions imported successfully"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Import failed: {str(e)}"
+        )
+
+
 
 @app.post("/transactions")
 async def create_transaction(

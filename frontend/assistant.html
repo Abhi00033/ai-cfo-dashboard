@@ -57,6 +57,10 @@
 
                 <div class="header-right">
 
+                    <div id="weatherWidget" class="weather-widget">
+                        🌤️ Loading Weather...
+                    </div>
+
                     <button onclick="openTransactionModal()" class="btn-refresh">
                         + Add Transaction
                     </button>
@@ -129,6 +133,8 @@
 
                 <div class="modal-body">
 
+                    <!-- Manual Transaction -->
+
                     <input type="number" id="txAmount" class="form-control mb-3" placeholder="Amount">
 
                     <select id="txCategory" class="form-select mb-3">
@@ -148,10 +154,64 @@
 
                     <select id="txType" class="form-select">
 
-                        <option value="income">Income</option>
-                        <option value="expense">Expense</option>
+                        <option value="income">
+                            Income
+                        </option>
+
+                        <option value="expense">
+                            Expense
+                        </option>
 
                     </select>
+
+                    <!-- Divider -->
+
+                    <div class="text-center my-4">
+
+                        <hr>
+
+                        <span class="px-3 bg-white text-muted" style="
+                position: relative;
+                top: -22px;
+            ">
+                            OR
+                        </span>
+
+                    </div>
+
+                    <!-- CSV Upload -->
+
+                    <div class="text-center">
+
+                        <h6 class="fw-bold mb-3">
+                            Import Transactions
+                        </h6>
+
+                        <input type="file" id="csvFile" class="form-control mb-3" accept=".csv">
+
+                        <div class="d-flex justify-content-center gap-2">
+
+                            <button type="button" class="btn btn-outline-primary" onclick="downloadCSVTemplate()">
+                                Download Template
+                            </button>
+
+                            <button type="button" class="btn btn-success" onclick="uploadCSV()">
+                                Upload CSV
+                            </button>
+
+                        </div>
+
+                        <small class="text-muted d-block mt-3">
+                            CSV Format:
+                            amount, category, description, type
+                        </small>
+
+                        <small class="text-muted d-block">
+                            Valid types:
+                            income, expense
+                        </small>
+
+                    </div>
 
                 </div>
 

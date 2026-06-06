@@ -428,6 +428,7 @@ window.onload = function () {
     loadTeamInfo();
     loadTransactions();
     loadCategories();
+    loadWeather();
 
     // Dashboard & Analytics Pages
     if (document.getElementById('revenueChart')) {
@@ -568,6 +569,133 @@ async function saveTransaction() {
 
     }
 }
+
+async function loadWeather() {
+
+    try {
+
+        const response = await fetch(
+            "https://wttr.in/?format=j1"
+        );
+
+        const data = await response.json();
+
+        const current =
+            data.current_condition[0];
+
+        document.getElementById(
+            "weatherWidget"
+        ).innerHTML =
+            `🌤️ ${current.temp_C}°C`;
+    }
+
+    catch (error) {
+
+        document.getElementById(
+            "weatherWidget"
+        ).innerHTML =
+            "🌤️ Weather Unavailable";
+    }
+}
+
+function downloadCSVTemplate() {
+
+    const csvContent =
+        `amount,category,description,type
+10000,Revenue,Website Project,income
+5000,Marketing,Google Ads Campaign,expense
+2500,HR,Recruitment Expense,expense
+15000,Investment,Mutual Fund Return,income`;
+
+    const blob = new Blob(
+        [csvContent],
+        {
+            type: "text/csv;charset=utf-8;"
+        }
+    );
+
+    const link =
+        document.createElement("a");
+
+    link.href =
+        URL.createObjectURL(blob);
+
+    link.download =
+        "transaction_template.csv";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+}
+
+
+
+async function uploadCSV() {
+
+    const fileInput =
+        document.getElementById("csvFile");
+
+    if (!fileInput.files.length) {
+
+        alert("Please select a CSV file");
+
+        return;
+    }
+
+    const formData = new FormData();
+
+    formData.append(
+        "file",
+        fileInput.files[0]
+    );
+
+    try {
+
+        const response = await fetch(
+            `${CONFIG.API_BASE_URL}/transactions/upload-csv`,
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail || "Upload failed"
+            );
+        }
+
+        alert(data.message);
+
+        fileInput.value = "";
+
+        refreshDashboard();
+
+        const modal =
+            bootstrap.Modal.getInstance(
+                document.getElementById(
+                    "transactionModal"
+                )
+            );
+
+        if (modal) {
+
+            modal.hide();
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(error.message);
+    }
+}
+
 
 async function loadCategories() {
 

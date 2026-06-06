@@ -1,5 +1,5 @@
 const CONFIG = {
-    API_BASE_URL: "https://ai-cfo-backend-fq1a.onrender.com",
+    API_BASE_URL: "http://localhost:8000",
 
     APP_NAME: "AI CFO",
 
