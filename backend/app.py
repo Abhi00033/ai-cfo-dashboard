@@ -53,6 +53,9 @@ class DashboardData(BaseModel):
 class AIQuery(BaseModel):
     query: str
 
+class DeleteTransactionsRequest(BaseModel):
+    ids: list[int]
+
 # Load environment variables
 load_dotenv()
 
@@ -290,6 +293,34 @@ async def delete_transaction(
     return {
         "message": "Deleted"
     }
+
+@app.post("/transactions/delete-multiple")
+async def delete_multiple_transactions(
+    payload: DeleteTransactionsRequest,
+    db: Session = Depends(get_db)
+):
+
+    if not payload.ids:
+
+        raise HTTPException(
+            status_code=400,
+            detail="No transactions selected"
+        )
+
+    deleted = db.query(
+        TransactionModel
+    ).filter(
+        TransactionModel.id.in_(payload.ids)
+    ).delete(
+        synchronize_session=False
+    )
+
+    db.commit()
+
+    return {
+        "message": f"{deleted} transaction(s) deleted successfully"
+    }
+
 
 @app.get("/compliance/check")
 async def check_compliance():

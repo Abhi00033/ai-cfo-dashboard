@@ -69,6 +69,27 @@ async function loadTransactions(page = 1) {
 
     tbody.innerHTML = '';
 
+    const counter =
+        document.getElementById(
+            "selectedCount"
+        );
+
+    if (counter) {
+
+        counter.textContent =
+            "0 Selected";
+    }
+
+    const selectAll =
+        document.getElementById(
+            "selectAll"
+        );
+
+    if (selectAll) {
+
+        selectAll.checked = false;
+    }
+
     try {
 
         const response =
@@ -137,16 +158,29 @@ async function loadTransactions(page = 1) {
                     : `-₹${Math.abs(t.amount / 100000).toFixed(2)}L`;
 
             tr.innerHTML = `
+
+                <td>
+                    <input
+                        type="checkbox"
+                        class="transaction-checkbox"
+                        value="${t.id}"
+                        onchange="updateSelectedCount()"
+                    >
+                </td>
+
                 <td>${t.date}</td>
                 <td>${t.category}</td>
                 <td>${t.description}</td>
+
                 <td class="${amountClass}">
                     ${amountDisplay}
                 </td>
+
                 <td>
                     <button
                         class="delete-btn"
-                        onclick="deleteTransaction(${t.id})">
+                        onclick="deleteTransaction(${t.id})"
+                    >
                         Delete
                     </button>
                 </td>
@@ -917,5 +951,115 @@ function loadTeamInfo() {
     if (teamRole) {
         teamRole.textContent =
             `${CONFIG.CREATED_BY} • ${CONFIG.ROLE}`;
+    }
+}
+
+
+function toggleSelectAll(source) {
+
+    const checkboxes =
+        document.querySelectorAll(
+            ".transaction-checkbox"
+        );
+
+    checkboxes.forEach(cb => {
+
+        cb.checked = source.checked;
+
+    });
+
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+
+    const checked =
+        document.querySelectorAll(
+            ".transaction-checkbox:checked"
+        ).length;
+
+    const counter =
+        document.getElementById(
+            "selectedCount"
+        );
+
+    if (counter) {
+
+        counter.textContent =
+            `${checked} Selected`;
+    }
+}
+
+async function deleteSelectedTransactions() {
+
+    const selected = Array.from(
+        document.querySelectorAll(
+            ".transaction-checkbox:checked"
+        )
+    ).map(
+        cb => Number(cb.value)
+    );
+
+    if (selected.length === 0) {
+
+        alert(
+            "Please select transactions"
+        );
+
+        return;
+    }
+
+    if (
+        !confirm(
+            `Delete ${selected.length} transaction(s)?`
+        )
+    ) {
+
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/transactions/delete-multiple`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify({
+                        ids: selected
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        showToast(data.message);
+
+        await loadTransactions();
+
+        if (
+            document.getElementById(
+                "revenue"
+            )
+        ) {
+
+            await fetchDashboardData();
+            await loadStats();
+            await loadAnalytics();
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            "Failed to delete transactions",
+            true
+        );
     }
 }
