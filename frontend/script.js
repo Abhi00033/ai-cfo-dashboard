@@ -671,6 +671,11 @@ async function uploadCSV() {
     const fileInput =
         document.getElementById("csvFile");
 
+    const uploadBtn =
+        document.getElementById(
+            "uploadCsvBtn"
+        );
+
     if (!fileInput.files.length) {
 
         alert("Please select a CSV file");
@@ -683,6 +688,15 @@ async function uploadCSV() {
     formData.append(
         "file",
         fileInput.files[0]
+    );
+
+    uploadBtn.disabled = true;
+
+    uploadBtn.innerHTML =
+        "⏳ Uploading...";
+
+    showToast(
+        "Importing transactions..."
     );
 
     try {
@@ -704,7 +718,7 @@ async function uploadCSV() {
             );
         }
 
-        alert(data.message);
+        showToast(data.message);
 
         fileInput.value = "";
 
@@ -726,7 +740,17 @@ async function uploadCSV() {
 
         console.error(error);
 
-        alert(error.message);
+        showToast(
+            error.message,
+            true
+        );
+
+    } finally {
+
+        uploadBtn.disabled = false;
+
+        uploadBtn.innerHTML =
+            "Upload CSV";
     }
 }
 
