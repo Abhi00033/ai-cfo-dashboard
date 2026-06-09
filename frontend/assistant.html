@@ -35,6 +35,16 @@
                     <i class="fas fa-shield-alt"></i> Compliance
                 </a>
 
+                <a href="gst.html" class="nav-item">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    GST Center
+                </a>
+                
+                 <a href="reports.html" class="nav-item">
+                    <i class="fas fa-chart-pie"></i>
+                    Reports
+                </a>
+
                 <a href="assistant.html" class="nav-item active">
                     <i class="fas fa-robot"></i> AI Assistant
                 </a>
@@ -52,8 +62,16 @@
         <div class="main-content">
             <!-- Top Nav -->
             <header>
+                <div>
+                    <h2>
+                        AI Assistant
+                    </h2>
 
-                <div></div>
+                    <small>
+                        AI Powered Financial Insights & Recommendations
+                    </small>
+
+                </div>
 
                 <div class="header-right">
 
@@ -68,32 +86,57 @@
                     <button id="refreshBtn" onclick="refreshDashboard()" class="btn-refresh">
                         🔄 Refresh
                     </button>
+                    <button id="themeToggle" class="btn-refresh">
+
+                        🌙
+
+                    </button>
 
                 </div>
 
             </header>
+            <div class="quick-stats mb-4">
+
+                <div class="quick-card">
+                    <h6>Revenue</h6>
+                    <h4 id="assistantRevenue">--</h4>
+                </div>
+
+                <div class="quick-card">
+                    <h6>Expenses</h6>
+                    <h4 id="assistantExpenses">--</h4>
+                </div>
+
+                <div class="quick-card">
+                    <h6>Profit Margin</h6>
+                    <h4 id="assistantProfit">--</h4>
+                </div>
+
+            </div>
 
             <!-- AI Assistant Page -->
             <div class="assistant-page">
 
-                <div class="page-header mb-4">
-
-                    <h2>
-                        AI Financial Assistant
-                    </h2>
-
-                    <p class="text-muted">
-                        Ask questions about revenue, expenses, cash flow, compliance and financial performance.
-                    </p>
-
-                </div>
-
                 <div class="ai-chat" id="assistant-section">
 
-                    <h3>
-                        <i class="fas fa-robot"></i>
-                        AI CFO Assistant
-                    </h3>
+                    <div class="d-flex
+                        justify-content-between
+                        align-items-center">
+
+                        <h3>
+
+                            <i class="fas fa-robot"></i>
+                            AI CFO Assistant
+
+                        </h3>
+
+                        <button class="btn btn-sm btn-outline-danger" onclick="clearChat()">
+
+                            Clear Chat
+
+                        </button>
+
+                    </div>
 
                     <div id="chat-messages" class="chat-messages">
                     </div>
@@ -104,6 +147,50 @@
 
                         <button onclick="sendMessage()">
                             Send
+                        </button>
+
+                    </div>
+                    <div class="mt-3 d-flex gap-2 flex-wrap">
+
+                        <button class="btn btn-outline-primary btn-sm"
+                            onclick="askQuickQuestion('How is my cash flow?')">
+
+                            💰 Cash Flow
+
+                        </button>
+
+                        <button class="btn btn-outline-warning btn-sm"
+                            onclick="askQuickQuestion('Show financial risks')">
+
+                            ⚠ Risk Analysis
+
+                        </button>
+
+                        <button class="btn btn-outline-success btn-sm"
+                            onclick="askQuickQuestion('Give profit improvement suggestions')">
+
+                            📈 Profit Tips
+
+                        </button>
+
+                        <button class="btn btn-outline-primary btn-sm"
+                            onclick="askQuickQuestion('How is my revenue growth?')">
+
+                            Revenue Growth
+
+                        </button>
+
+                        <button class="btn btn-outline-danger btn-sm" onclick="askQuickQuestion('Any fraud risks?')">
+
+                            Fraud Risk
+
+                        </button>
+
+                        <button class="btn btn-outline-info btn-sm"
+                            onclick="askQuickQuestion('How can I reduce expenses?')">
+
+                            Reduce Expenses
+
                         </button>
 
                     </div>

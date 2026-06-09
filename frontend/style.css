@@ -4,11 +4,30 @@
     box-sizing: border-box;
 }
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f4f7fa;
-    color: #333;
+:root {
+
+    --primary: #0f172a;
+    --secondary: #1e293b;
+
+    --accent: #14b8a6;
+    --accent-hover: #0d9488;
+
+    --bg: #f8fafc;
+    --card: #ffffff;
+
+    --success: #22c55e;
+    --danger: #ef4444;
+
+    --text: #1e293b;
+    --text-light: #64748b;
 }
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
 
 #toast {
     position: fixed;
@@ -42,8 +61,9 @@ body {
     position: fixed;
     left: 0;
     top: 0;
-
-    background: linear-gradient(180deg, #1e3a8a, #3b82f6);
+    background: linear-gradient(180deg,
+            #0f172a,
+            #1e293b);
     color: white;
 
     padding: 20px;
@@ -149,16 +169,19 @@ body {
 
 header {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
 
-    margin-bottom: 32px;
-
     background: white;
-    padding: 16px 24px;
-    border-radius: 12px;
 
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 18px 24px;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, .05);
+
+    margin-bottom: 24px;
 }
 
 
@@ -169,13 +192,18 @@ header {
 }
 
 .btn-refresh {
-    background: #3b82f6;
+    background: #14b8a6;
     color: white;
     border: none;
     padding: 10px 20px;
     border-radius: 50px;
     cursor: pointer;
     font-weight: 600;
+    transition: .3s;
+}
+
+.btn-refresh:hover {
+    transform: translateY(-2px);
 }
 
 /* KPI Cards */
@@ -189,23 +217,28 @@ header {
 .kpi-card {
     background: white;
     padding: 24px;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-    transition: transform 0.3s;
+    border-radius: 18px;
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, .08);
+    transition: .3s;
+    border-left: 5px solid #14b8a6;
 }
 
 .kpi-card:hover {
-    transform: translateY(-6px);
+    transform: translateY(-8px);
 }
 
 .kpi-card h3 {
     color: #64748b;
     font-size: 15px;
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .5px;
 }
 
 .kpi-card h2 {
-    font-size: 32px;
+    font-size: 34px;
+    font-weight: 700;
     margin: 12px 0;
     color: #1e2937;
 }
@@ -221,6 +254,35 @@ header {
     font-size: 14px;
     font-weight: 600;
 }
+
+/* quick stats */
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.quick-card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, .08);
+}
+
+.ai-question {
+    cursor: pointer;
+    transition: .3s;
+}
+
+.ai-question:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .12);
+}
+
+/* quick stats */
+
 
 /* Charts */
 .charts-grid {
@@ -411,7 +473,7 @@ header {
 /* Assistant page css */
 .assistant-page {
     padding: 20px;
-    height: calc(100vh - 120px);
+    min-height: calc(100vh - 140px);
 }
 
 .assistant-page .ai-chat {
@@ -480,7 +542,15 @@ header {
     border: none;
     border-radius: 50%;
 
-    background: #2563eb;
+    background: linear-gradient(135deg,
+            #14b8a6,
+            #0d9488);
+
+    box-shadow:
+        0 10px 25px rgba(20,
+            184,
+            166,
+            .4);
     color: white;
 
     font-size: 28px;
@@ -490,8 +560,6 @@ header {
     justify-content: center;
 
     cursor: pointer;
-
-    box-shadow: 0 8px 25px rgba(37, 99, 235, .35);
 
     z-index: 9999;
 }
@@ -518,3 +586,253 @@ header {
 }
 
 /* weather */
+
+
+/* smart alert */
+body.dark #smartAlerts li {
+
+    background: #334155;
+}
+
+#smartAlerts {
+    list-style: none;
+    padding: 0;
+}
+
+#smartAlerts li {
+
+    padding: 12px;
+
+    margin-bottom: 10px;
+
+    border-left: 4px solid var(--accent);
+
+    background: #f8fafc;
+
+    border-radius: 8px;
+}
+
+/* smart alert */
+
+
+
+
+
+
+/* dark theme */
+
+/* =========================
+   DARK MODE COMPLETE FIX
+========================= */
+
+body.dark {
+
+    background: #020617;
+    color: #f8fafc;
+}
+
+/* Main cards */
+body.dark .kpi-card,
+body.dark .chart-card,
+body.dark .transactions,
+body.dark .quick-card,
+body.dark .ai-chat,
+body.dark header,
+body.dark .weather-widget {
+
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+/* All headings */
+body.dark h1,
+body.dark h2,
+body.dark h3,
+body.dark h4,
+body.dark h5,
+body.dark h6 {
+
+    color: #f8fafc !important;
+}
+
+/* KPI labels */
+body.dark .kpi-card h3 {
+
+    color: #cbd5e1 !important;
+}
+
+/* Chart headings */
+body.dark .chart-card h3 {
+
+    color: #f8fafc !important;
+}
+
+/* Table headings */
+body.dark .transactions th {
+
+    color: #cbd5e1 !important;
+}
+
+/* Table content */
+body.dark .transactions td {
+
+    color: #f8fafc;
+}
+
+/* Small muted text */
+body.dark .text-muted,
+body.dark small {
+
+    color: #94a3b8 !important;
+}
+
+/* Inputs */
+body.dark input,
+body.dark select,
+body.dark textarea {
+
+    background: #334155;
+    color: white;
+    border: 1px solid #475569;
+}
+
+/* Input placeholder */
+body.dark input::placeholder {
+
+    color: #cbd5e1;
+}
+
+/* Bootstrap modal */
+body.dark .modal-content {
+
+    background: #1e293b;
+    color: white;
+}
+
+body.dark .modal-header,
+body.dark .modal-footer {
+
+    border-color: #334155;
+}
+
+/* Chat input area */
+body.dark .chat-input {
+
+    background: #1e293b;
+}
+
+/* Chat bot messages */
+body.dark .bot {
+
+    background: #334155;
+    color: white;
+}
+
+/* Smart alerts */
+body.dark #smartAlerts li {
+
+    background: #334155;
+    color: white;
+}
+
+/* Pagination */
+body.dark .page-btn {
+
+    background: #334155;
+    color: white;
+}
+
+body.dark .page-btn:hover {
+
+    background: var(--accent);
+}
+
+/* Transaction table borders */
+body.dark .transactions td,
+body.dark .transactions th {
+
+    border-color: #334155;
+}
+
+/* Quick stats */
+body.dark .quick-card {
+
+    color: white;
+}
+
+/* Sidebar user info */
+body.dark .user-info {
+
+    color: white;
+}
+
+body.dark .bot {
+    background: #334155;
+    color: white;
+}
+
+body.dark .chat-input {
+    background: #1e293b;
+}
+
+body.dark .chat-input input {
+    background: #0f172a;
+    color: white;
+    border-color: #334155;
+}
+
+.custom-close-btn {
+    opacity: 1;
+}
+
+body.dark .custom-close-btn {
+
+    filter: invert(1);
+
+    opacity: 1;
+}
+
+/* Dark Mode Modal Fix */
+
+body.dark .modal-content {
+
+    background: #1e293b;
+    color: white;
+}
+
+body.dark .modal-header {
+
+    border-bottom: 1px solid #334155;
+}
+
+body.dark .modal-footer {
+
+    border-top: 1px solid #334155;
+}
+
+body.dark .modal .btn-close {
+
+    filter: invert(1);
+    opacity: 1;
+}
+
+body.dark .modal .form-control,
+body.dark .modal .form-select {
+
+    background: #0f172a;
+    color: white;
+    border-color: #334155;
+}
+
+body.dark .modal .form-control::placeholder {
+
+    color: #94a3b8;
+}
+
+body.dark .modal .text-muted {
+
+    color: #cbd5e1 !important;
+}
+
+
+/* dark theme */

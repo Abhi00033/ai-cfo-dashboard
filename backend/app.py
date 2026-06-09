@@ -16,8 +16,18 @@ from dotenv import load_dotenv
 from fastapi import UploadFile, File, HTTPException, Depends
 from models import TransactionModel, get_db
 from sqlalchemy.orm import Session
+from ml.fraud_detection import fraud_detector
 
-
+CATEGORY_MAPPING = {
+    "Revenue": 1,
+    "Operations": 2,
+    "Investment": 3,
+    "Marketing": 4,
+    "Sales": 5,
+    "HR": 6,
+    "Technology": 7,
+    "Finance": 8
+}
 
 
 app = FastAPI(
@@ -100,6 +110,107 @@ async def get_dashboard(db: Session = Depends(get_db)):
         "expenses": round(total_expenses, 2),
         "profit_margin": round(profit_margin, 2)
     }
+
+
+@app.get("/dashboard-insights")
+async def dashboard_insights(
+    db: Session = Depends(get_db)
+):
+
+    transactions = db.query(
+        TransactionModel
+    ).all()
+
+    income = [
+        t.amount
+        for t in transactions
+        if t.type == "income"
+    ]
+
+    expenses = [
+        abs(t.amount)
+        for t in transactions
+        if t.type == "expense"
+    ]
+
+    total_income = sum(income)
+
+    avg_expense = (
+        round(sum(expenses) / len(expenses), 2)
+        if expenses
+        else 0
+    )
+
+    growth = 0
+
+    if len(income) >= 2:
+
+        growth = round(
+            (
+                (income[-1] - income[0])
+                / income[0]
+            ) * 100,
+            2
+        )
+
+    return {
+        "growth": growth,
+        "avg_expense": avg_expense,
+
+        "revenue_change": growth,
+
+        "cashflow_change":
+            round(growth * 0.8, 2),
+
+        "expense_change":
+            round(
+                (
+                    sum(expenses)
+                    / max(total_income, 1)
+                ) * 100,
+                2
+            ),
+
+        "profit_change":
+            round(
+                growth * 0.4,
+                2
+            )
+    }
+
+
+
+@app.get("/expense-breakdown")
+async def expense_breakdown(
+    db: Session = Depends(get_db)
+):
+
+    transactions = db.query(
+        TransactionModel
+    ).all()
+
+    categories = {}
+
+    for t in transactions:
+
+        if t.type != "expense":
+            continue
+
+        categories[t.category] = (
+            categories.get(
+                t.category,
+                0
+            )
+            + abs(t.amount)
+        )
+
+    return {
+        "labels":
+            list(categories.keys()),
+        "values":
+            list(categories.values())
+    }
+
 
 @app.get("/transactions")
 async def get_transactions(db: Session = Depends(get_db)):
@@ -346,29 +457,106 @@ async def ai_assistant( query: AIQuery,db: Session = Depends(get_db)):
 
         dashboard = await get_dashboard(db)
         transactions = await get_transactions(db)
-        
+
+        fraud = await detect_fraud(db)
+        compliance = await check_compliance()
+        analytics_data = await analytics(db)
+
         context = f"""
-        You are an expert AI CFO Assistant for a growing Indian company.
-        Current Financial Snapshot:
-        - Total Revenue: ₹{dashboard['total_revenue']/10000000:.2f} Cr
-        - Cash Flow: ₹{dashboard['cash_flow']/10000000:.2f} Cr
-        - Expenses: ₹{dashboard['expenses']/10000000:.2f} Cr
-        - Profit Margin: {dashboard['profit_margin']}%
-        
-        Recent Transactions: {str(transactions)[:500]}...
-        
-        Provide concise, professional, actionable financial advice in Indian Rupees.
-        Be helpful, data-driven, and proactive about risks and opportunities.
+        You are AI CFO, a professional Chief Financial Officer assistant.
+
+        BUSINESS DATA
+
+        Revenue: ₹{dashboard['total_revenue']/10000000:.2f} Cr
+        Cash Flow: ₹{dashboard['cash_flow']/10000000:.2f} Cr
+        Expenses: ₹{dashboard['expenses']/10000000:.2f} Cr
+        Profit Margin: {dashboard['profit_margin']}%
+
+        Fraud Status: {fraud['status']}
+        Flagged Transactions: {fraud['flagged_transactions']}
+        Fraud Score: {fraud['fraud_score']}%
+
+        Compliance Status: {compliance['status']}
+        GST Filing: {compliance['gst_filing']}
+        Risk Score: {compliance['risk_score']}
+
+        Recent Transactions:
+        {str(transactions[:10])}
+
+        Rules:
+
+        - Always answer based on actual business data.
+        - Never give generic responses.
+        - Keep answers easy to read.
+        - Use headings.
+        - Use bullet points.
+        - Use Indian currency format.
+        - Give business recommendations.
+
+        Question Categories:
+
+        Cash Flow:
+        Explain health, strengths, risks and recommendations.
+
+        Revenue:
+        Explain growth, trends and opportunities.
+
+        Expenses:
+        Explain biggest expenses and cost-saving opportunities.
+
+        Profit:
+        Explain profitability and improvement suggestions.
+
+        Fraud:
+        Explain suspicious transactions and risk level.
+
+        Compliance:
+        Explain compliance status, GST status and audit readiness.
+
+        Analytics:
+        Explain trends visible in charts and financial performance.
+
+        Transactions:
+        Explain income, expenses and transaction patterns.
+
+        Business Health:
+        Combine revenue, profit, cash flow, fraud and compliance.
+
+        Always act like a CFO.
         """
         
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",  # Cost-effective & fast. Change to gpt-4o for best quality
             messages=[
-                {"role": "system", "content": context},
-                {"role": "user", "content": query.query}
+                {
+                    "role": "system",
+                    "content": context
+                },
+                {
+                    "role": "user",
+                    "content": f"""
+            Question: {query.query}
+
+            Answer as a professional CFO.
+
+            Adapt the structure based on the user's question.
+
+            For example:
+            - Fraud questions -> Fraud Risk Assessment
+            - Profit questions -> Profit Improvement Opportunities
+            - Cash Flow questions -> Cash Flow Analysis
+            - Revenue questions -> Revenue Growth Analysis
+            - Compliance questions -> Compliance Review
+
+            Do not force the same headings for every response.
+            Use only sections relevant to the question.
+
+            Only include sections relevant to the user's question.
+            """
+                }
             ],
             temperature=0.7,
-            max_tokens=300
+            max_tokens=700
         )
         
         answer = response.choices[0].message.content.strip()
@@ -529,13 +717,179 @@ async def reset(db: Session = Depends(get_db)):
 
 
 @app.get("/fraud/detect")
-async def detect_fraud():
-    # Mock ML Fraud Detection
+async def detect_fraud(
+    db: Session = Depends(get_db)
+):
+
+    transactions = db.query(
+        TransactionModel
+    ).all()
+
+    if len(transactions) < 5:
+
+        return {
+            "fraud_score": 0,
+            "status": "Not Enough Data",
+            "flagged_transactions": 0,
+            "suspicious_transactions": [],
+            "recommendation": "Need at least 5 transactions"
+        }
+
+    data = []
+
+    for t in transactions:
+
+        data.append({
+            "amount": t.amount,
+            "category_encoded": CATEGORY_MAPPING.get(
+                t.category,
+                0
+            ),
+            "category": t.category,
+            "description": t.description
+        })
+
+    df = pd.DataFrame([
+        {
+            "amount": item["amount"],
+            "category_encoded": item["category_encoded"]
+        }
+        for item in data
+    ])
+
+    fraud_detector.train(df)
+
+    flagged = 0
+    flagged_items = []
+
+    for row in data:
+
+        result = fraud_detector.predict({
+            "amount": row["amount"],
+            "category_encoded": row["category_encoded"]
+        })
+
+        if result["is_fraud"]:
+
+            flagged += 1
+
+            flagged_items.append({
+                "amount": row["amount"],
+                "category": row["category"],
+                "description": row["description"]
+            })
+
+    fraud_score = round(
+        (flagged / len(data)) * 100,
+        2
+    )
+
     return {
-        "fraud_score": 0.08,
-        "status": "Low Risk",
-        "flagged_transactions": 2,
-        "recommendation": "Review transactions from vendor XYZ"
+        "fraud_score": fraud_score,
+        "status": (
+            "High Risk"
+            if fraud_score > 20
+            else "Low Risk"
+        ),
+        "flagged_transactions": flagged,
+        "suspicious_transactions": flagged_items,
+        "recommendation":
+            f"{flagged} unusual transaction(s) detected"
+    }
+
+@app.get("/gst/summary")
+async def gst_summary(
+    db: Session = Depends(get_db)
+):
+
+    transactions = db.query(
+        TransactionModel
+    ).all()
+
+    revenue = sum(
+        t.amount
+        for t in transactions
+        if t.type == "income"
+    )
+
+    gst_collected = round(
+        revenue * 0.18,
+        2
+    )
+
+    gst_payable = round(
+        gst_collected * 0.25,
+        2
+    )
+
+    return {
+
+        "revenue": revenue,
+
+        "gst_collected":
+            gst_collected,
+
+        "gst_payable":
+            gst_payable,
+
+        "invoice_count":
+            len(transactions),
+
+        "status":
+            "Compliant",
+
+        "audit_readiness":
+            "Ready",
+
+        "compliance_score":
+            95
+    }
+
+@app.get("/reports/summary")
+async def reports_summary(
+    db: Session = Depends(get_db)
+):
+    dashboard = await get_dashboard(db)
+
+    fraud = await detect_fraud(db)
+
+    compliance = await check_compliance()
+
+    gst_revenue = dashboard["total_revenue"]
+
+    gst_collected = round(
+        gst_revenue * 0.18,
+        2
+    )
+
+    return {
+
+        "revenue":
+            dashboard["total_revenue"],
+
+        "expenses":
+            dashboard["expenses"],
+
+        "profit_margin":
+            dashboard["profit_margin"],
+
+        "cash_flow":
+            dashboard["cash_flow"],
+
+        "fraud_status":
+            fraud["status"],
+
+        "compliance_status":
+            compliance["status"],
+
+        "gst_status":
+            "Compliant",
+
+        "health_score":
+            95,
+
+        "gst_collected":
+            gst_collected
     }
 
 # Run the app

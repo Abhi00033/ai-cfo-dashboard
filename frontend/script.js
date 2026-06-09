@@ -1,5 +1,29 @@
 const API = CONFIG.API_BASE_URL;
 
+
+document
+    .getElementById("themeToggle")
+    ?.addEventListener("click", () => {
+
+        document.body.classList.toggle("dark");
+
+        const isDark =
+            document.body.classList.contains("dark");
+
+        localStorage.setItem(
+            "theme",
+            isDark ? "dark" : "light"
+        );
+
+        const btn =
+            document.getElementById("themeToggle");
+
+        btn.textContent =
+            isDark
+                ? "☀️"
+                : "🌙";
+    });
+
 // Initialize Charts
 let revenueChart, cashflowChart;
 
@@ -20,6 +44,7 @@ function showToast(message, isError = false) {
     }, 3000);
 }
 
+let expensePieChart;
 function initCharts() {
     // Revenue Chart
     const revenueCtx = document.getElementById('revenueChart');
@@ -57,6 +82,62 @@ function initCharts() {
         },
         options: { responsive: true, plugins: { legend: { position: 'top' } } }
     });
+
+    const pie =
+        document.getElementById(
+            "expensePieChart"
+        );
+
+    if (pie) {
+
+        expensePieChart =
+            new Chart(
+                pie,
+                {
+                    type: "pie",
+                    data: {
+                        labels: [
+                            "Marketing",
+                            "Operations",
+                            "HR",
+                            "Technology"
+                        ],
+                        datasets: [{
+                            data: [
+                                35,
+                                30,
+                                15,
+                                20
+                            ]
+                        }]
+                    }
+                }
+            );
+    }
+}
+
+async function loadHealthScore() {
+
+    const response =
+        await fetch(
+            `${API}/dashboard`
+        );
+
+    const data =
+        await response.json();
+
+    let score = 100;
+
+    if (data.profit_margin < 20)
+        score -= 20;
+
+    if (data.expenses > data.total_revenue * 0.8)
+        score -= 15;
+
+    document.getElementById(
+        "healthScore"
+    ).textContent =
+        `${score}%`;
 }
 
 // Populate Transactions from Backend
@@ -157,34 +238,57 @@ async function loadTransactions(page = 1) {
                     ? `+₹${(t.amount / 100000).toFixed(2)}L`
                     : `-₹${Math.abs(t.amount / 100000).toFixed(2)}L`;
 
-            tr.innerHTML = `
+            if (isTransactionsPage) {
 
-                <td>
-                    <input
-                        type="checkbox"
-                        class="transaction-checkbox"
-                        value="${t.id}"
-                        onchange="updateSelectedCount()"
-                    >
-                </td>
+                tr.innerHTML = `
+        <td>
+            <input
+                type="checkbox"
+                class="transaction-checkbox"
+                value="${t.id}"
+                onchange="updateSelectedCount()"
+            >
+        </td>
 
-                <td>${t.date}</td>
-                <td>${t.category}</td>
-                <td>${t.description}</td>
+        <td>${t.date}</td>
+        <td>${t.category}</td>
+        <td>${t.description}</td>
 
-                <td class="${amountClass}">
-                    ${amountDisplay}
-                </td>
+        <td class="${amountClass}">
+            ${amountDisplay}
+        </td>
 
-                <td>
-                    <button
-                        class="delete-btn"
-                        onclick="deleteTransaction(${t.id})"
-                    >
-                        Delete
-                    </button>
-                </td>
-            `;
+        <td>
+            <button
+                class="delete-btn"
+                onclick="deleteTransaction(${t.id})"
+            >
+                Delete
+            </button>
+        </td>
+    `;
+
+            } else {
+
+                tr.innerHTML = `
+                    <td>${t.date}</td>
+                    <td>${t.category}</td>
+                    <td>${t.description}</td>
+
+                    <td class="${amountClass}">
+                        ${amountDisplay}
+                    </td>
+
+                    <td>
+                        <button
+                            class="delete-btn"
+                            onclick="deleteTransaction(${t.id})"
+                        >
+                            Delete
+                        </button>
+                    </td>
+                `;
+            }
 
             tbody.appendChild(tr);
         });
@@ -264,11 +368,28 @@ function addMessage(text, type) {
     if (!chatMessages) return;
     const msg = document.createElement('div');
     msg.className = `chat-message ${type}`;
-    msg.textContent = text;
+    msg.innerHTML = text
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\n/g, "<br>")
+        .replace(/•/g, "👉 ");
     chatMessages.appendChild(msg);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    localStorage.setItem(
+        "chatHistory",
+        chatMessages.innerHTML
+    );
 }
 
+const AI_SUGGESTIONS = [
+    "How is my cash flow?",
+    "Analyze my business health",
+    "Any fraud risks?",
+    "How can I improve profit?",
+    "Show expense optimization ideas",
+    "Review compliance status",
+    "Summarize recent transactions",
+    "What are my biggest risks?"
+];
 async function sendMessage() {
 
     const input =
@@ -294,8 +415,8 @@ async function sendMessage() {
     typing.className =
         'chat-message bot';
 
-    typing.textContent =
-        'Thinking...';
+    typing.innerHTML =
+        '🤖 AI CFO is analyzing revenue, expenses, fraud risk and compliance...';
 
     chatMessages.appendChild(typing);
 
@@ -456,13 +577,45 @@ async function refreshDashboard() {
 }
 
 
+
+const savedTheme =
+    localStorage.getItem("theme");
+
+if (savedTheme === "dark") {
+
+    document.body.classList.add("dark");
+
+    window.addEventListener(
+        "DOMContentLoaded",
+        () => {
+
+            const btn =
+                document.getElementById(
+                    "themeToggle"
+                );
+
+            if (btn) {
+
+                btn.textContent =
+                    "☀️";
+            }
+        }
+    );
+}
+
+
 // Initialize everything
 window.onload = function () {
 
     loadTeamInfo();
     loadTransactions();
+    loadTransactionSummary();
     loadCategories();
     loadWeather();
+    loadSmartAlerts();
+    loadHealthScore();
+    loadComplianceInsights();
+    loadAssistantStats();
 
     // Dashboard & Analytics Pages
     if (document.getElementById('revenueChart')) {
@@ -471,6 +624,24 @@ window.onload = function () {
         fetchDashboardData();
         loadStats();
         loadAnalytics();
+        loadInsights();
+        loadExpenseBreakdown();
+    }
+
+    if (
+        window.location.pathname
+            .includes("gst.html")
+    ) {
+
+        loadGSTData();
+    }
+
+    if (
+        window.location.pathname
+            .includes("reports.html")
+    ) {
+
+        loadReports();
     }
 
     // Compliance Page
@@ -486,6 +657,19 @@ window.onload = function () {
     const chatInput =
         document.getElementById('chat-input');
 
+    const history =
+        localStorage.getItem(
+            "chatHistory"
+        );
+
+    if (
+        history &&
+        chatMessages
+    ) {
+        chatMessages.innerHTML =
+            history;
+    }
+
     if (chatInput) {
 
         chatInput.addEventListener('keypress', function (e) {
@@ -496,14 +680,22 @@ window.onload = function () {
 
         });
 
-        setTimeout(() => {
-
-            addMessage(
-                "Hello! I'm your AI CFO Assistant. How can I help you today?",
-                'bot'
+        const history =
+            localStorage.getItem(
+                "chatHistory"
             );
 
-        }, 600);
+        if (!history) {
+
+            setTimeout(() => {
+
+                addMessage(
+                    "Hello! I'm your AI CFO Assistant. How can I help you today?",
+                    "bot"
+                );
+
+            }, 600);
+        }
     }
 };
 
@@ -528,6 +720,181 @@ function closeTransactionModal() {
         modal.hide();
     }
 }
+
+async function loadInsights() {
+
+    const response =
+        await fetch(
+            `${API}/dashboard-insights`
+        );
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "revenueGrowth"
+    ).textContent =
+        `${data.growth}%`;
+
+    document.getElementById(
+        "avgExpense"
+    ).textContent =
+        `₹${(
+            data.avg_expense / 100000
+        ).toFixed(2)}L`;
+
+    // Revenue
+
+    const revenueChange =
+        document.getElementById(
+            "revenueChange"
+        );
+
+    if (revenueChange) {
+
+        revenueChange.className =
+            data.revenue_change >= 0
+                ? "positive"
+                : "negative";
+
+        revenueChange.textContent =
+            `${data.revenue_change}% this month`;
+    }
+
+    // Cashflow
+
+    const cashflowChange =
+        document.getElementById(
+            "cashflowChange"
+        );
+
+    if (cashflowChange) {
+
+        cashflowChange.className =
+            data.cashflow_change >= 0
+                ? "positive"
+                : "negative";
+
+        cashflowChange.textContent =
+            `${data.cashflow_change}% this month`;
+    }
+
+    // Expense
+
+    const expenseChange =
+        document.getElementById(
+            "expenseChange"
+        );
+
+    if (expenseChange) {
+
+        expenseChange.className =
+            data.expense_change <= 80
+                ? "positive"
+                : "negative";
+
+        expenseChange.textContent =
+            `${data.expense_change}% of revenue`;
+    }
+
+    // Profit
+
+    const profitChange =
+        document.getElementById(
+            "profitChange"
+        );
+
+    if (profitChange) {
+
+        profitChange.className =
+            data.profit_change >= 0
+                ? "positive"
+                : "negative";
+
+        profitChange.textContent =
+            `${data.profit_change}% this month`;
+    }
+}
+
+
+async function loadTransactionSummary() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/transactions`
+            );
+
+        const transactions =
+            await response.json();
+
+        let income = 0;
+        let expense = 0;
+
+        transactions.forEach(t => {
+
+            if (t.type === "income") {
+
+                income += Number(
+                    t.amount
+                );
+
+            } else {
+
+                expense += Math.abs(
+                    Number(t.amount)
+                );
+            }
+
+        });
+
+        const incomeEl =
+            document.getElementById(
+                "incomeTotal"
+            );
+
+        const expenseEl =
+            document.getElementById(
+                "expenseTotal"
+            );
+
+        const totalEl =
+            document.getElementById(
+                "transactionTotal"
+            );
+
+        if (incomeEl) {
+
+            incomeEl.textContent =
+                `₹${(
+                    income / 100000
+                ).toFixed(2)}L`;
+        }
+
+        if (expenseEl) {
+
+            expenseEl.textContent =
+                `₹${(
+                    expense / 100000
+                ).toFixed(2)}L`;
+        }
+
+        if (totalEl) {
+
+            totalEl.textContent =
+                transactions.length;
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Failed to load transaction summary",
+            error
+        );
+    }
+}
+
 
 async function saveTransaction() {
 
@@ -572,6 +939,7 @@ async function saveTransaction() {
             document.getElementById('txType').selectedIndex = 0;
 
             await loadTransactions();
+            await loadTransactionSummary();
 
             if (document.getElementById('revenue')) {
 
@@ -869,6 +1237,7 @@ async function deleteTransaction(id) {
             );
 
             await loadTransactions();
+            await loadTransactionSummary();
 
             if (document.getElementById('revenue')) {
 
@@ -1065,6 +1434,7 @@ async function deleteSelectedTransactions() {
         showToast(data.message);
 
         await loadTransactions();
+        await loadTransactionSummary();
 
         if (
             document.getElementById(
@@ -1083,6 +1453,834 @@ async function deleteSelectedTransactions() {
 
         showToast(
             "Failed to delete transactions",
+            true
+        );
+    }
+}
+
+
+async function loadSmartAlerts() {
+
+    const alerts =
+        document.getElementById(
+            "smartAlerts"
+        );
+
+    if (!alerts) return;
+
+    alerts.innerHTML = "";
+
+    try {
+
+        const fraudResponse =
+            await fetch(
+                `${API}/fraud/detect`
+            );
+
+        const fraud =
+            await fraudResponse.json();
+
+        const dashboardResponse =
+            await fetch(
+                `${API}/dashboard`
+            );
+
+        const dashboard =
+            await dashboardResponse.json();
+
+        let alertCount = 0;
+
+        // Fraud Alert
+        if (
+            fraud.flagged_transactions > 0
+        ) {
+
+            alertCount++;
+
+            alerts.innerHTML += `
+                <li>
+                    ⚠ ${fraud.flagged_transactions}
+                    suspicious transaction(s) detected
+                </li>
+            `;
+        }
+
+        // Profit Margin Alert
+        if (
+            dashboard.profit_margin < 20
+        ) {
+
+            alertCount++;
+
+            alerts.innerHTML += `
+                <li>
+                    📉 Profit margin is below 20%
+                </li>
+            `;
+        }
+
+        // Expense Alert
+        if (
+            dashboard.expenses >
+            dashboard.total_revenue * 0.8
+        ) {
+
+            alertCount++;
+
+            alerts.innerHTML += `
+                <li>
+                    💸 Expenses exceed 80% of revenue
+                </li>
+            `;
+        }
+
+        // Positive Alert
+        if (
+            dashboard.profit_margin >= 20
+        ) {
+
+            alerts.innerHTML += `
+                <li>
+                    📈 Healthy profit margin maintained
+                </li>
+            `;
+        }
+
+        // No Alerts
+        if (alertCount === 0) {
+
+            alerts.innerHTML += `
+                <li>
+                    ✅ No critical financial alerts
+                </li>
+            `;
+        }
+
+        const alertCounter =
+            document.getElementById(
+                "alertCount"
+            );
+
+        if (alertCounter) {
+
+            alertCounter.textContent =
+                alertCount;
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        alerts.innerHTML = `
+            <li>
+                ❌ Failed to load alerts
+            </li>
+        `;
+    }
+}
+
+async function loadExpenseBreakdown() {
+
+    const response =
+        await fetch(
+            `${API}/expense-breakdown`
+        );
+
+    const data =
+        await response.json();
+
+    expensePieChart.data.labels =
+        data.labels;
+
+    expensePieChart.data.datasets[0].data =
+        data.values;
+
+    expensePieChart.update();
+}
+
+
+async function loadComplianceInsights() {
+
+    try {
+
+        const complianceResponse =
+            await fetch(
+                `${API}/compliance/check`
+            );
+
+        const compliance =
+            await complianceResponse.json();
+
+        const fraudResponse =
+            await fetch(
+                `${API}/fraud/detect`
+            );
+
+        const fraud =
+            await fraudResponse.json();
+
+        const score =
+            fraud.flagged_transactions === 0
+                ? 95
+                : 80;
+
+        const alerts =
+            fraud.flagged_transactions;
+
+        const complianceScore =
+            document.getElementById(
+                "complianceScore"
+            );
+
+        if (complianceScore) {
+
+            complianceScore.textContent =
+                `${score}%`;
+        }
+
+        const riskAlerts =
+            document.getElementById(
+                "riskAlerts"
+            );
+
+        if (riskAlerts) {
+
+            riskAlerts.textContent =
+                alerts;
+        }
+
+        const auditReadiness =
+            document.getElementById(
+                "auditReadiness"
+            );
+
+        if (auditReadiness) {
+
+            auditReadiness.textContent =
+                score > 90
+                    ? "Ready"
+                    : "Review";
+        }
+
+        const gstStatus =
+            document.getElementById(
+                "gstStatus"
+            );
+
+        if (gstStatus) {
+
+            gstStatus.textContent =
+                compliance.status;
+        }
+
+        const auditScore =
+            document.getElementById(
+                "auditScore"
+            );
+
+        if (auditScore) {
+
+            auditScore.textContent =
+                `${score}%`;
+        }
+
+        const summary =
+            document.getElementById(
+                "complianceSummary"
+            );
+
+        if (summary) {
+
+            summary.innerHTML = "";
+
+            summary.innerHTML += `
+                <li>
+                    GST Status:
+                    ${compliance.status}
+                </li>
+            `;
+
+            summary.innerHTML += `
+                <li>
+                    Fraud Alerts:
+                    ${fraud.flagged_transactions}
+                </li>
+            `;
+
+            summary.innerHTML += `
+                <li>
+                    Audit Readiness:
+                    ${score > 90 ? "Ready" : "Review"}
+                </li>
+            `;
+
+            summary.innerHTML += `
+                <li>
+                    Compliance Score:
+                    ${score}%
+                </li>
+            `;
+        }
+
+    } catch (error) {
+
+        console.error(error);
+    }
+}
+
+function askQuickQuestion(question) {
+
+    const input =
+        document.getElementById(
+            "chat-input"
+        );
+
+    input.value = question;
+
+    sendMessage();
+}
+
+function clearChat() {
+
+    if (
+        !confirm(
+            "Clear entire chat history?"
+        )
+    ) {
+        return;
+    }
+
+    const chat =
+        document.getElementById(
+            "chat-messages"
+        );
+
+    if (!chat) return;
+
+    chat.innerHTML = "";
+
+    localStorage.removeItem(
+        "chatHistory"
+    );
+
+    addMessage(
+        "Hello! I'm your AI CFO Assistant. How can I help you today?",
+        "bot"
+    );
+}
+
+
+async function loadAssistantStats() {
+
+    const response =
+        await fetch(
+            `${API}/dashboard`
+        );
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "assistantRevenue"
+    ).textContent =
+        `₹${(data.total_revenue / 10000000).toFixed(2)} Cr`;
+
+    document.getElementById(
+        "assistantExpenses"
+    ).textContent =
+        `₹${(data.expenses / 10000000).toFixed(2)} Cr`;
+
+    document.getElementById(
+        "assistantProfit"
+    ).textContent =
+        `${data.profit_margin}%`;
+}
+
+async function loadGSTData() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/gst/summary`
+            );
+
+        const data =
+            await response.json();
+
+        document.getElementById(
+            "gstCollected"
+        ).textContent =
+            `₹${(
+                data.gst_collected /
+                100000
+            ).toFixed(2)}L`;
+
+        document.getElementById(
+            "gstPayable"
+        ).textContent =
+            `₹${(
+                data.gst_payable /
+                100000
+            ).toFixed(2)}L`;
+
+        document.getElementById(
+            "invoiceCount"
+        ).textContent =
+            data.invoice_count;
+
+        document.getElementById(
+            "gstStatus"
+        ).textContent =
+            data.status;
+
+        document.getElementById(
+            "auditReadiness"
+        ).textContent =
+            data.audit_readiness;
+
+        document.getElementById(
+            "gstComplianceScore"
+        ).textContent =
+            `${data.compliance_score}%`;
+
+        const tbody =
+            document.getElementById(
+                "gstTableBody"
+            );
+
+        if (tbody) {
+
+            tbody.innerHTML = `
+                <tr>
+
+                    <td>
+                        ₹${(
+                    data.revenue /
+                    100000
+                ).toFixed(2)}L
+                    </td>
+
+                    <td>
+                        ₹${(
+                    data.gst_collected /
+                    100000
+                ).toFixed(2)}L
+                    </td>
+
+                    <td>
+                        ₹${(
+                    data.gst_payable /
+                    100000
+                ).toFixed(2)}L
+                    </td>
+
+                </tr>
+            `;
+        }
+
+        const alerts =
+            document.getElementById(
+                "gstAlerts"
+            );
+
+        if (alerts) {
+
+            alerts.innerHTML = `
+                <li>
+                    ✅ GST Status Healthy
+                </li>
+
+                <li>
+                    📄 ${data.invoice_count}
+                    invoices processed
+                </li>
+
+                <li>
+                    ⚠ GST Filing Due In 7 Days
+                </li>
+            `;
+        }
+
+    } catch (error) {
+
+        console.error(
+            "GST Error",
+            error
+        );
+    }
+}
+
+async function loadReports() {
+
+    const response =
+        await fetch(
+            `${API}/reports/summary`
+        );
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "reportRevenue"
+    ).textContent =
+        `₹${(
+            data.revenue / 10000000
+        ).toFixed(2)} Cr`;
+
+    document.getElementById(
+        "reportExpenses"
+    ).textContent =
+        `₹${(
+            data.expenses / 10000000
+        ).toFixed(2)} Cr`;
+
+    document.getElementById(
+        "reportProfit"
+    ).textContent =
+        `${data.profit_margin}%`;
+
+    document.getElementById(
+        "healthScore"
+    ).textContent =
+        `${data.health_score}%`;
+
+    document.getElementById(
+        "reportFraud"
+    ).textContent =
+        data.fraud_status;
+
+    document.getElementById(
+        "reportCompliance"
+    ).textContent =
+        data.compliance_status;
+
+    document.getElementById(
+        "reportGST"
+    ).textContent =
+        data.gst_status;
+
+    document.getElementById(
+        "reportTable"
+    ).innerHTML = `
+        <tr>
+
+            <td>
+                Revenue
+            </td>
+
+            <td>
+                ₹${(
+            data.revenue /
+            10000000
+        ).toFixed(2)} Cr
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>
+                Expenses
+            </td>
+
+            <td>
+                ₹${(
+            data.expenses /
+            10000000
+        ).toFixed(2)} Cr
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>
+                Profit Margin
+            </td>
+
+            <td>
+                ${data.profit_margin}%
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>
+                GST Collected
+            </td>
+
+            <td>
+                ₹${(
+            data.gst_collected /
+            100000
+        ).toFixed(2)}L
+            </td>
+
+        </tr>
+    `;
+}
+
+async function downloadReport() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/reports/summary`
+            );
+
+        const data =
+            await response.json();
+
+        const report = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AI CFO Financial Report</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            color: #333;
+        }
+
+        h1 {
+            color: #2563eb;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #f5f5f5;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <h1>🤖 AI CFO Financial Report</h1>
+
+    <p>
+        Generated:
+        ${new Date().toLocaleString()}
+    </p>
+
+    <table>
+
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+
+        <tr>
+            <td>Revenue</td>
+            <td>₹${(data.revenue / 10000000).toFixed(2)} Cr</td>
+        </tr>
+
+        <tr>
+            <td>Expenses</td>
+            <td>₹${(data.expenses / 10000000).toFixed(2)} Cr</td>
+        </tr>
+
+        <tr>
+            <td>Profit Margin</td>
+            <td>${data.profit_margin}%</td>
+        </tr>
+
+        <tr>
+            <td>Cash Flow</td>
+            <td>₹${(data.cash_flow / 10000000).toFixed(2)} Cr</td>
+        </tr>
+
+        <tr>
+            <td>Fraud Status</td>
+            <td>${data.fraud_status}</td>
+        </tr>
+
+        <tr>
+            <td>Compliance Status</td>
+            <td>${data.compliance_status}</td>
+        </tr>
+
+        <tr>
+            <td>GST Status</td>
+            <td>${data.gst_status}</td>
+        </tr>
+
+        <tr>
+            <td>Health Score</td>
+            <td>${data.health_score}%</td>
+        </tr>
+
+    </table>
+
+    <br>
+
+    <h3>AI CFO Summary</h3>
+
+    <p>
+        Revenue stands at
+        ₹${(data.revenue / 10000000).toFixed(2)} Cr
+        with a profit margin of
+        ${data.profit_margin}%.
+        Current fraud status is
+        ${data.fraud_status}
+        and compliance status is
+        ${data.compliance_status}.
+    </p>
+
+</body>
+</html>
+`;
+
+        const blob =
+            new Blob(
+                [report],
+                {
+                    type: "text/html"
+                }
+            );
+
+        const link =
+            document.createElement("a");
+
+        link.href =
+            URL.createObjectURL(blob);
+
+        link.download =
+            "AI_CFO_Report.html";
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(link.href);
+
+        showToast(
+            "Report downloaded successfully"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            "Failed to download report",
+            true
+        );
+    }
+}
+
+async function refreshReports() {
+
+    const btn =
+        event.currentTarget;
+
+    const originalText =
+        btn.innerHTML;
+
+    btn.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+
+    btn.disabled = true;
+
+    try {
+
+        await loadReports();
+
+        showToast(
+            "Report data refreshed successfully"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            "Failed to refresh report data",
+            true
+        );
+
+    } finally {
+
+        btn.innerHTML =
+            originalText;
+
+        btn.disabled = false;
+    }
+}
+
+
+async function exportTransactionsCSV() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/transactions`
+            );
+
+        const transactions =
+            await response.json();
+
+        let csv =
+            "Date,Category,Description,Type,Amount\n";
+
+        transactions.forEach(t => {
+
+            csv +=
+                `${t.date},${t.category},"${t.description}",${t.type},${t.amount}\n`;
+        });
+
+        const blob =
+            new Blob(
+                [csv],
+                {
+                    type: "text/csv"
+                }
+            );
+
+        const link =
+            document.createElement("a");
+
+        link.href =
+            URL.createObjectURL(blob);
+
+        link.download =
+            "transactions_export.csv";
+
+        link.click();
+
+        showToast(
+            "Transactions exported"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            "Export failed",
             true
         );
     }

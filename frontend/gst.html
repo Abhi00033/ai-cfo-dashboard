@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI CFO - Compliance</title>
+    <title>AI CFO - GST Center</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -31,16 +31,16 @@
                     <i class="fas fa-file-invoice"></i> Transactions
                 </a>
 
-                <a href="compliance.html" class="nav-item active">
+                <a href="compliance.html" class="nav-item">
                     <i class="fas fa-shield-alt"></i> Compliance
                 </a>
 
-                <a href="gst.html" class="nav-item">
+                <a href="gst.html" class="nav-item active">
                     <i class="fas fa-file-invoice-dollar"></i>
                     GST Center
                 </a>
 
-                 <a href="reports.html" class="nav-item">
+                <a href="reports.html" class="nav-item">
                     <i class="fas fa-chart-pie"></i>
                     Reports
                 </a>
@@ -63,12 +63,13 @@
             <!-- Top Nav -->
             <header>
                 <div>
+
                     <h2>
-                        Compliance
+                        GST Center
                     </h2>
 
                     <small>
-                        Risk Monitoring & Regulatory Compliance
+                        GST Monitoring, Filing Status & Tax Insights
                     </small>
 
                 </div>
@@ -95,14 +96,17 @@
                 </div>
 
             </header>
+            <!-- Quick Stats -->
 
             <div class="quick-stats">
 
                 <div class="quick-card">
 
-                    🛡 Compliance Score
+                    <h6>
+                        GST Collected
+                    </h6>
 
-                    <h4 id="complianceScore">
+                    <h4 id="gstCollected">
                         --
                     </h4>
 
@@ -110,9 +114,11 @@
 
                 <div class="quick-card">
 
-                    ⚠ Risk Alerts
+                    <h6>
+                        GST Payable
+                    </h6>
 
-                    <h4 id="riskAlerts">
+                    <h4 id="gstPayable">
                         --
                     </h4>
 
@@ -120,9 +126,11 @@
 
                 <div class="quick-card">
 
-                    📋 Audit Readiness
+                    <h6>
+                        Invoices Processed
+                    </h6>
 
-                    <h4 id="auditReadiness">
+                    <h4 id="invoiceCount">
                         --
                     </h4>
 
@@ -130,77 +138,118 @@
 
             </div>
 
-            <!-- Compliance Page -->
-            <div class="compliance-page">
+            <!-- KPI Cards -->
 
-                <div class="kpi-grid">
+            <div class="kpi-grid">
 
-                    <div class="kpi-card">
+                <div class="kpi-card">
 
-                        <h3>
-                            Compliance Status
-                        </h3>
+                    <h3>
+                        GST Status
+                    </h3>
 
-                        <h2 id="compliance">
-                            Loading...
-                        </h2>
-
-                    </div>
-
-                    <div class="kpi-card">
-
-                        <h3>
-                            Fraud Risk
-                        </h3>
-
-                        <h2 id="fraud">
-                            Loading...
-                        </h2>
-
-                    </div>
-
-                    <div class="kpi-card">
-
-                        <h3>
-                            GST Status
-                        </h3>
-
-                        <h2 id="gstStatus">
-                            Loading...
-                        </h2>
-
-                    </div>
-
-                    <div class="kpi-card">
-
-                        <h3>
-                            Audit Score
-                        </h3>
-
-                        <h2 id="auditScore">
-                            Loading...
-                        </h2>
-
-                    </div>
+                    <h2 id="gstStatus">
+                        --
+                    </h2>
 
                 </div>
 
-                <div class="chart-card mt-4">
+                <div class="kpi-card">
 
                     <h3>
-                        Compliance Summary
+                        GST Rate
                     </h3>
 
-                    <ul id="complianceSummary" class="mb-0">
+                    <h2>
+                        18%
+                    </h2>
+
+                </div>
+
+                <div class="kpi-card">
+
+                    <h3>
+                        Audit Readiness
+                    </h3>
+
+                    <h2 id="auditReadiness">
+                        --
+                    </h2>
+
+                </div>
+
+                <div class="kpi-card">
+
+                    <h3>
+                        Compliance Score
+                    </h3>
+
+                    <h2 id="gstComplianceScore">
+                        --
+                    </h2>
+
+                </div>
+
+            </div>
+
+            <!-- GST Summary -->
+
+            <div class="bottom-grid">
+
+                <div class="transactions">
+
+                    <h3 class="mb-3">
+                        Monthly GST Summary
+                    </h3>
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Revenue
+                                </th>
+
+                                <th>
+                                    GST Collected
+                                </th>
+
+                                <th>
+                                    GST Payable
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="gstTableBody">
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="chart-card">
+
+                    <h3>
+                        GST Alerts
+                    </h3>
+
+                    <ul id="gstAlerts">
 
                         <li>
                             Loading...
                         </li>
 
                     </ul>
+
                 </div>
 
             </div>
+
 
         </div>
     </div>
@@ -327,7 +376,8 @@
     <button class="ai-float-btn" data-bs-toggle="modal" data-bs-target="#aiAssistantModal">
         <i class="fas fa-robot"></i>
     </button>
-     <div class="modal fade" id="aiAssistantModal" tabindex="-1">
+
+    <div class="modal fade" id="aiAssistantModal" tabindex="-1">
 
         <div class="modal-dialog modal-dialog-centered modal-lg">
 
@@ -403,7 +453,6 @@
         </div>
 
     </div>
-
     <div id="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>

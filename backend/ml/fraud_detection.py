@@ -14,20 +14,30 @@ class FraudDetector:
         features = data[['amount', 'category_encoded']].values
         self.model.fit(features)
         self.is_trained = True
-        joblib.dump(self.model, 'models/fraud_model.pkl')
+        joblib.dump(self.model, 'ml/fraud_model.pkl')
         return "Fraud detection model trained successfully!"
     
     def predict(self, transaction):
-        """Predict if transaction is fraudulent"""
+
         if not self.is_trained:
-            self.model = joblib.load('models/fraud_model.pkl')
-        
-        # Mock prediction for demo
-        score = np.random.uniform(0, 0.3)
+
+            self.model = joblib.load(
+                'ml/fraud_model.pkl'
+            )
+
+            self.is_trained = True
+
+        features = [[
+            transaction["amount"],
+            transaction["category_encoded"]
+        ]]
+
+        prediction = self.model.predict(features)[0]
+
         return {
-            "is_fraud": score > 0.25,
-            "fraud_probability": round(score * 100, 2),
-            "confidence": "High" if score > 0.2 else "Medium"
+            "is_fraud": prediction == -1,
+            "fraud_probability": 90 if prediction == -1 else 10,
+            "confidence": "High" if prediction == -1 else "Low"
         }
 
 # Initialize

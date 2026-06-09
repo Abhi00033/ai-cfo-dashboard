@@ -35,6 +35,16 @@
                     <i class="fas fa-shield-alt"></i> Compliance
                 </a>
 
+                <a href="gst.html" class="nav-item">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    GST Center
+                </a>
+
+                <a href="reports.html" class="nav-item">
+                    <i class="fas fa-chart-pie"></i>
+                    Reports
+                </a>
+                
                 <a href="assistant.html" class="nav-item">
                     <i class="fas fa-robot"></i> AI Assistant
                 </a>
@@ -52,8 +62,16 @@
         <div class="main-content">
             <!-- Top Nav -->
             <header>
+                <div>
+                    <h2>
+                        Dashboard
+                    </h2>
 
-                <div></div>
+                    <small>
+                        AI Powered Financial Overview
+                    </small>
+
+                </div>
 
                 <div class="header-right">
 
@@ -68,6 +86,11 @@
                     <button id="refreshBtn" onclick="refreshDashboard()" class="btn-refresh">
                         🔄 Refresh
                     </button>
+                    <button id="themeToggle" class="btn-refresh">
+
+                        🌙
+
+                    </button>
 
                 </div>
 
@@ -78,12 +101,12 @@
                 <div class="kpi-card">
                     <h3>Total Revenue</h3>
                     <h2 id="revenue">Loading...</h2>
-                    <p class="positive">+18.5% <span>this month</span></p>
+                    <p id="revenueChange">Loading...</p>
                 </div>
                 <div class="kpi-card">
                     <h3>Cash Flow</h3>
                     <h2 id="cashflow">Loading...</h2>
-                    <p class="positive">+12.3% <span>this month</span></p>
+                    <p id="cashflowChange">Loading...</p>
                 </div>
                 <div class="kpi-card">
                     <h3>Total Transactions</h3>
@@ -96,17 +119,44 @@
                 <div class="kpi-card">
                     <h3>Expenses</h3>
                     <h2 id="expenses">Loading...</h2>
-                    <p class="negative">-4.2% <span>this month</span></p>
+                    <p id="expenseChange">Loading...</p>
                 </div>
                 <div class="kpi-card">
                     <h3>Profit Margin</h3>
                     <h2 id="profit">Loading...</h2>
-                    <p class="positive">+2.1% <span>this month</span></p>
+                    <p id="profitChange">Loading...</p>
                 </div>
                 <div class="kpi-card">
                     <h3>Fraud Risk</h3>
                     <h2 id="fraud">Loading...</h2>
                 </div>
+
+                <div class="kpi-card">
+                    <h3>Financial Health</h3>
+                    <h2 id="healthScore">92%</h2>
+                    <p class="positive">
+                        Excellent
+                    </p>
+                </div>
+            </div>
+
+            <div class="quick-stats">
+
+                <div class="quick-card">
+                    📈 Revenue Growth
+                    <h4 id="revenueGrowth">--</h4>
+                </div>
+
+                <div class="quick-card">
+                    💸 Avg Expense
+                    <h4 id="avgExpense">--</h4>
+                </div>
+
+                <div class="quick-card">
+                    ⚠ Risk Alerts
+                    <h4 id="alertCount">--</h4>
+                </div>
+
             </div>
 
             <!-- Charts -->
@@ -119,7 +169,27 @@
                     <h3>Cash Flow</h3>
                     <canvas id="cashflowChart"></canvas>
                 </div>
+                <div class="chart-card">
+                    <h3>
+                        Expense Breakdown
+                    </h3>
+                    <canvas id="expensePieChart">
+                    </canvas>
+                </div>
+                <div class="chart-card">
+
+                    <h3>
+                        🚨 Smart Alerts
+                    </h3>
+
+                    <ul id="smartAlerts">
+                        <li>Loading...</li>
+                    </ul>
+
+                </div>
+
             </div>
+
 
             <!-- Recent Transactions & AI Assistant -->
             <div id="transactions-section">
@@ -168,29 +238,6 @@
                     </div>
 
                 </div>
-
-                <!-- AI Chat -->
-                <!-- <div class="ai-chat" id="assistant-section">
-
-                    <h3>
-                        <i class="fas fa-robot"></i>
-                        AI Financial Assistant
-                    </h3>
-
-                    <div id="chat-messages" class="chat-messages">
-                    </div>
-
-                    <div class="chat-input">
-
-                        <input type="text" id="chat-input" placeholder="Ask about finances...">
-
-                        <button onclick="sendMessage()">
-                            Send
-                        </button>
-
-                    </div>
-
-                </div> -->
 
             </div>
         </div>
@@ -316,9 +363,7 @@
     </div>
 
     <button class="ai-float-btn" data-bs-toggle="modal" data-bs-target="#aiAssistantModal">
-
         <i class="fas fa-robot"></i>
-
     </button>
 
     <div class="modal fade" id="aiAssistantModal" tabindex="-1">
@@ -329,16 +374,27 @@
 
                 <div class="modal-header">
 
-                    <h5 class="modal-title">
+                    <h5 class="modal-title mb-0">
                         🤖 AI CFO Assistant
                     </h5>
 
-                    <button type="button" class="btn-close" data-bs-dismiss="modal">
+                    <button type="button" class="btn-close custom-close-btn" data-bs-dismiss="modal">
                     </button>
 
                 </div>
 
                 <div class="modal-body">
+
+                    <div class="d-flex justify-content-end mb-2">
+
+                        <button class="btn btn-sm btn-outline-danger" onclick="clearChat()">
+
+                            <i class="fas fa-trash"></i>
+                            Clear Chat
+
+                        </button>
+
+                    </div>
 
                     <div id="chat-messages" class="chat-messages">
                     </div>
@@ -350,6 +406,30 @@
                         <button class="btn btn-primary" onclick="sendMessage()">
 
                             Send
+
+                        </button>
+
+                    </div>
+
+                    <div class="mt-3 d-flex gap-2 flex-wrap">
+
+                        <button class="btn btn-outline-primary btn-sm"
+                            onclick="askQuickQuestion('How is my cash flow?')">
+
+                            💰 Cash Flow
+
+                        </button>
+
+                        <button class="btn btn-outline-warning btn-sm" onclick="askQuickQuestion('Any fraud risks?')">
+
+                            ⚠ Fraud Risk
+
+                        </button>
+
+                        <button class="btn btn-outline-success btn-sm"
+                            onclick="askQuickQuestion('Give profit improvement suggestions')">
+
+                            📈 Profit Tips
 
                         </button>
 
