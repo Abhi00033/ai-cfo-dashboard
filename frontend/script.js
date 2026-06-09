@@ -4,6 +4,7 @@ let revenueChart, cashflowChart;
 let dashboardData = null;
 let complianceData = null;
 let fraudData = null;
+let transactionCache = [];
 
 document
     .getElementById("themeToggle")
@@ -195,6 +196,9 @@ async function loadTransactions(page = 1) {
 
         const data =
             await response.json();
+
+        transactionCache = [...data];
+
         data.reverse();
 
         if (data.length === 0) {
@@ -621,104 +625,118 @@ if (savedTheme === "dark") {
 }
 
 
-// Initialize everything
-window.onload = async function () {
+async function loadDashboardPage() {
 
+    await Promise.all([
 
-    await fetchDashboardData();
-    await loadCompliance();
-    await loadFraud();
+        fetchDashboardData(),
 
-    loadTeamInfo();
-    loadTransactions();
-    loadTransactionSummary();
-    loadCategories();
-    loadWeather();
+        loadCompliance(),
+
+        loadFraud()
+
+    ]);
+
+    await loadTransactions();
 
     loadHealthScore();
+
     loadComplianceInsights();
-    loadAssistantStats();
+
     loadSmartAlerts();
 
-    // Dashboard & Analytics Pages
-    if (document.getElementById('revenueChart')) {
+    initCharts();
+
+    await loadAnalytics();
+
+    await loadInsights();
+
+    await loadExpenseBreakdown();
+
+    await loadStats();
+}
+
+// Initialize everything
+const currentPage =
+    window.location.pathname
+        .split("/")
+        .pop();
+
+window.onload = async function () {
+
+    loadTeamInfo();
+    loadWeather();
+    setupChat();
+
+    if (
+        currentPage === "" ||
+        currentPage === "index.html"
+    ) {
+
+        await loadDashboardPage();
+    }
+
+    else if (
+        currentPage === "analytics.html"
+    ) {
 
         initCharts();
-        fetchDashboardData();
-        loadStats();
-        loadAnalytics();
-        loadInsights();
-        loadExpenseBreakdown();
+
+        await fetchDashboardData();
+
+        await loadAnalytics();
+
+        await loadInsights();
+
+        await loadExpenseBreakdown();
+
+        await loadFraud();
+
+        loadSmartAlerts();
     }
 
-    if (
-        window.location.pathname
-            .includes("gst.html")
+    else if (
+        currentPage === "transactions.html"
     ) {
 
-        loadGSTData();
+        await loadTransactions();
+
+        loadTransactionSummary();
     }
 
-    if (
-        window.location.pathname
-            .includes("reports.html")
+    else if (
+        currentPage === "compliance.html"
     ) {
 
-        loadReports();
+        await Promise.all([
+            loadCompliance(),
+            loadFraud()
+        ]);
+
+        loadComplianceInsights();
     }
 
-    // Compliance Page
-    if (document.getElementById('compliance')) {
-        loadCompliance();
-    }
-
-    if (document.getElementById('fraud')) {
-        loadFraud();
-    }
-
-    // AI Assistant Page
-    const chatInput =
-        document.getElementById('chat-input');
-
-    const history =
-        localStorage.getItem(
-            "chatHistory"
-        );
-
-    if (
-        history &&
-        chatMessages
+    else if (
+        currentPage === "gst.html"
     ) {
-        chatMessages.innerHTML =
-            history;
+
+        await loadGSTData();
     }
 
-    if (chatInput) {
+    else if (
+        currentPage === "reports.html"
+    ) {
 
-        chatInput.addEventListener('keypress', function (e) {
+        await loadReports();
+    }
 
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+    else if (
+        currentPage === "assistant.html"
+    ) {
 
-        });
+        await fetchDashboardData();
 
-        const history =
-            localStorage.getItem(
-                "chatHistory"
-            );
-
-        if (!history) {
-
-            setTimeout(() => {
-
-                addMessage(
-                    "Hello! I'm your AI CFO Assistant. How can I help you today?",
-                    "bot"
-                );
-
-            }, 600);
-        }
+        loadAssistantStats();
     }
 };
 
@@ -895,13 +913,13 @@ async function loadTransactionSummary() {
 
     try {
 
-        const response =
-            await fetch(
-                `${API}/transactions`
-            );
-
         const transactions =
-            await response.json();
+            transactionCache;
+
+        if (!transactions.length) {
+
+            return;
+        }
 
         let income = 0;
         let expense = 0;
@@ -1048,29 +1066,68 @@ async function saveTransaction() {
 
 async function loadWeather() {
 
-    try {
-
-        const response = await fetch(
-            "https://wttr.in/?format=j1"
+    const weatherEl =
+        document.getElementById(
+            "weatherWidget"
         );
 
-        const data = await response.json();
+    if (!weatherEl) return;
 
-        const current =
-            data.current_condition[0];
+    const cached =
+        localStorage.getItem(
+            "weatherData"
+        );
 
-        document.getElementById(
-            "weatherWidget"
-        ).innerHTML =
-            `🌤️ ${current.temp_C}°C`;
+    const cachedTime =
+        localStorage.getItem(
+            "weatherTime"
+        );
+
+    if (
+        cached &&
+        cachedTime &&
+        (
+            Date.now() -
+            Number(cachedTime)
+        ) < 3600000
+    ) {
+
+        weatherEl.innerHTML =
+            cached;
+
+        return;
     }
 
-    catch (error) {
+    try {
 
-        document.getElementById(
-            "weatherWidget"
-        ).innerHTML =
-            "🌤️ Weather Unavailable";
+        const response =
+            await fetch(
+                "https://wttr.in/?format=j1"
+            );
+
+        const data =
+            await response.json();
+
+        const html =
+            `🌤️ ${data.current_condition[0].temp_C}°C`;
+
+        weatherEl.innerHTML =
+            html;
+
+        localStorage.setItem(
+            "weatherData",
+            html
+        );
+
+        localStorage.setItem(
+            "weatherTime",
+            Date.now()
+        );
+
+    } catch {
+
+        weatherEl.innerHTML =
+            "🌤️ Weather";
     }
 }
 
@@ -1921,6 +1978,13 @@ async function loadAssistantStats() {
 
 async function loadGSTData() {
 
+    const collected =
+        document.getElementById(
+            "gstCollected"
+        );
+
+    if (!collected) return;
+
     try {
 
         const response =
@@ -2035,6 +2099,13 @@ async function loadGSTData() {
 }
 
 async function loadReports() {
+
+    const revenue =
+        document.getElementById(
+            "reportRevenue"
+        );
+
+    if (!revenue) return;
 
     const response =
         await fetch(
@@ -2415,5 +2486,101 @@ async function exportTransactionsCSV() {
             "Export failed",
             true
         );
+    }
+}
+
+
+async function refreshCompliance() {
+
+    const btn =
+        document.getElementById(
+            "refreshBtn"
+        );
+
+    btn.disabled = true;
+
+    btn.innerHTML =
+        "⏳ Refreshing...";
+
+    try {
+
+        await Promise.all([
+
+            loadCompliance(),
+
+            loadFraud()
+
+        ]);
+
+        loadComplianceInsights();
+
+        showToast(
+            "Compliance data refreshed"
+        );
+
+        btn.innerHTML =
+            "✅ Refreshed";
+
+    } catch (error) {
+
+        console.error(error);
+
+        btn.innerHTML =
+            "❌ Failed";
+
+    } finally {
+
+        setTimeout(() => {
+
+            btn.innerHTML =
+                "🔄 Refresh";
+
+            btn.disabled = false;
+
+        }, 1500);
+    }
+}
+
+
+async function refreshGST() {
+
+    const btn =
+        document.getElementById(
+            "refreshBtn"
+        );
+
+    btn.disabled = true;
+
+    btn.innerHTML =
+        "⏳ Refreshing...";
+
+    try {
+
+        await loadGSTData();
+
+        showToast(
+            "GST data refreshed"
+        );
+
+        btn.innerHTML =
+            "✅ Refreshed";
+
+    } catch (error) {
+
+        console.error(error);
+
+        btn.innerHTML =
+            "❌ Failed";
+
+    } finally {
+
+        setTimeout(() => {
+
+            btn.innerHTML =
+                "🔄 Refresh";
+
+            btn.disabled = false;
+
+        }, 1500);
     }
 }
