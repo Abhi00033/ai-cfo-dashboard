@@ -119,24 +119,36 @@ function initCharts() {
 async function loadHealthScore() {
 
     const response =
-        await fetch(
-            `${API}/dashboard`
-        );
+        await fetch(`${API}/dashboard`);
 
     const data =
         await response.json();
+
+    const healthScore =
+        document.getElementById("healthScore");
+
+    if (!healthScore) return;
+
+    if (
+        data.total_revenue === 0 &&
+        data.expenses === 0
+    ) {
+        healthScore.textContent = "N/A";
+        return;
+    }
 
     let score = 100;
 
     if (data.profit_margin < 20)
         score -= 20;
 
-    if (data.expenses > data.total_revenue * 0.8)
+    if (
+        data.expenses >
+        data.total_revenue * 0.8
+    )
         score -= 15;
 
-    document.getElementById(
-        "healthScore"
-    ).textContent =
+    healthScore.textContent =
         `${score}%`;
 }
 
@@ -731,6 +743,49 @@ async function loadInsights() {
     const data =
         await response.json();
 
+    if (
+        !data ||
+        (
+            Number(data.growth || 0) === 0 &&
+            Number(data.avg_expense || 0) === 0 &&
+            Number(data.revenue_change || 0) === 0 &&
+            Number(data.cashflow_change || 0) === 0 &&
+            Number(data.expense_change || 0) === 0 &&
+            Number(data.profit_change || 0) === 0
+        )
+    ) {
+
+        document.getElementById(
+            "revenueGrowth"
+        ).textContent = "0%";
+
+        const revenueChange =
+            document.getElementById("revenueChange");
+
+        const cashflowChange =
+            document.getElementById("cashflowChange");
+
+        const expenseChange =
+            document.getElementById("expenseChange");
+
+        const profitChange =
+            document.getElementById("profitChange");
+
+        if (revenueChange)
+            revenueChange.textContent = "Add transactions to view trends";
+
+        if (cashflowChange)
+            cashflowChange.textContent = "Add transactions to view trends";
+
+        if (expenseChange)
+            expenseChange.textContent = "Add transactions to view trends";
+
+        if (profitChange)
+            profitChange.textContent = "Add transactions to view trends";
+
+        return;
+    }
+
     document.getElementById(
         "revenueGrowth"
     ).textContent =
@@ -758,7 +813,9 @@ async function loadInsights() {
                 : "negative";
 
         revenueChange.textContent =
-            `${data.revenue_change}% this month`;
+            data.revenue_change !== undefined
+                ? `${data.revenue_change}% this month`
+                : "No data available";
     }
 
     // Cashflow
@@ -776,7 +833,9 @@ async function loadInsights() {
                 : "negative";
 
         cashflowChange.textContent =
-            `${data.cashflow_change}% this month`;
+            data.cashflow_change !== undefined
+                ? `${data.cashflow_change}% this month`
+                : "No data available";
     }
 
     // Expense
@@ -794,7 +853,9 @@ async function loadInsights() {
                 : "negative";
 
         expenseChange.textContent =
-            `${data.expense_change}% of revenue`;
+            data.expense_change !== undefined
+                ? `${data.expense_change}% of revenue`
+                : "No revenue data";
     }
 
     // Profit
@@ -812,7 +873,9 @@ async function loadInsights() {
                 : "negative";
 
         profitChange.textContent =
-            `${data.profit_change}% this month`;
+            data.profit_change !== undefined
+                ? `${data.profit_change}% this month`
+                : "No data available";
     }
 }
 
@@ -1940,10 +2003,19 @@ async function loadReports() {
     ).textContent =
         `${data.profit_margin}%`;
 
-    document.getElementById(
-        "healthScore"
-    ).textContent =
-        `${data.health_score}%`;
+    const health =
+        document.getElementById(
+            "healthScore"
+        );
+
+    if (health) {
+
+        health.textContent =
+            data.revenue === 0 &&
+                data.expenses === 0
+                ? "N/A"
+                : `${data.health_score}%`;
+    }
 
     document.getElementById(
         "reportFraud"
