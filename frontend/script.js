@@ -1,5 +1,9 @@
 const API = CONFIG.API_BASE_URL;
-
+// Initialize Charts
+let revenueChart, cashflowChart;
+let dashboardData = null;
+let complianceData = null;
+let fraudData = null;
 
 document
     .getElementById("themeToggle")
@@ -24,8 +28,7 @@ document
                 : "🌙";
     });
 
-// Initialize Charts
-let revenueChart, cashflowChart;
+
 
 function showToast(message, isError = false) {
 
@@ -118,11 +121,10 @@ function initCharts() {
 
 async function loadHealthScore() {
 
-    const response =
-        await fetch(`${API}/dashboard`);
-
     const data =
-        await response.json();
+        dashboardData;
+
+    if (!data) return;
 
     const healthScore =
         document.getElementById("healthScore");
@@ -496,8 +498,11 @@ async function fetchDashboardData() {
         if (!response.ok)
             throw new Error('Backend not responding');
 
-        const data =
+        dashboardData =
             await response.json();
+
+        const data =
+            dashboardData;
 
         const revenue =
             document.getElementById('revenue');
@@ -617,17 +622,23 @@ if (savedTheme === "dark") {
 
 
 // Initialize everything
-window.onload = function () {
+window.onload = async function () {
+
+
+    await fetchDashboardData();
+    await loadCompliance();
+    await loadFraud();
 
     loadTeamInfo();
     loadTransactions();
     loadTransactionSummary();
     loadCategories();
     loadWeather();
-    loadSmartAlerts();
+
     loadHealthScore();
     loadComplianceInsights();
     loadAssistantStats();
+    loadSmartAlerts();
 
     // Dashboard & Analytics Pages
     if (document.getElementById('revenueChart')) {
@@ -1337,19 +1348,19 @@ async function loadCompliance() {
         const compliance =
             document.getElementById('compliance');
 
-        if (!compliance) return;
-
         const response =
             await fetch(
                 `${API}/compliance/check`
             );
 
-        const data =
+        complianceData =
             await response.json();
 
+        if (!compliance) return;
+
         compliance.innerHTML =
-            `${data.status}<br>
-            <small>${data.gst_filing}</small>`;
+            `${complianceData.status}<br>
+            <small>${complianceData.gst_filing}</small>`;
 
     } catch (error) {
 
@@ -1369,16 +1380,18 @@ async function loadFraud() {
         const fraud =
             document.getElementById('fraud');
 
-        if (!fraud) return;
-
         const response =
-            await fetch(`${API}/fraud/detect`);
+            await fetch(
+                `${API}/fraud/detect`
+            );
 
-        const data =
+        fraudData =
             await response.json();
 
+        if (!fraud) return;
+
         fraud.textContent =
-            data.status;
+            fraudData.status;
 
     } catch (error) {
 
@@ -1535,21 +1548,13 @@ async function loadSmartAlerts() {
 
     try {
 
-        const fraudResponse =
-            await fetch(
-                `${API}/fraud/detect`
-            );
+        const fraud = fraudData;
 
-        const fraud =
-            await fraudResponse.json();
-
-        const dashboardResponse =
-            await fetch(
-                `${API}/dashboard`
-            );
+        if (!fraud || !dashboardData)
+            return;
 
         const dashboard =
-            await dashboardResponse.json();
+            dashboardData;
 
         let alertCount = 0;
 
@@ -1666,21 +1671,14 @@ async function loadComplianceInsights() {
 
     try {
 
-        const complianceResponse =
-            await fetch(
-                `${API}/compliance/check`
-            );
-
         const compliance =
-            await complianceResponse.json();
-
-        const fraudResponse =
-            await fetch(
-                `${API}/fraud/detect`
-            );
+            complianceData;
 
         const fraud =
-            await fraudResponse.json();
+            fraudData;
+
+        if (!compliance || !fraud)
+            return;
 
         const score =
             fraud.flagged_transactions === 0
@@ -1832,31 +1830,93 @@ function clearChat() {
     );
 }
 
+function setupChat() {
+
+    const chatInput =
+        document.getElementById('chat-input');
+
+    const history =
+        localStorage.getItem(
+            "chatHistory"
+        );
+
+    if (
+        history &&
+        chatMessages
+    ) {
+        chatMessages.innerHTML =
+            history;
+    }
+
+    if (!chatInput) return;
+
+    chatInput.addEventListener(
+        'keypress',
+        function (e) {
+
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+
+        }
+    );
+
+    if (!history) {
+
+        setTimeout(() => {
+
+            addMessage(
+                "Hello! I'm your AI CFO Assistant. How can I help you today?",
+                "bot"
+            );
+
+        }, 600);
+    }
+}
+
 
 async function loadAssistantStats() {
 
-    const response =
-        await fetch(
-            `${API}/dashboard`
+    const data = dashboardData;
+
+    if (!data) return;
+
+    const revenue =
+        document.getElementById(
+            "assistantRevenue"
         );
 
-    const data =
-        await response.json();
+    const expenses =
+        document.getElementById(
+            "assistantExpenses"
+        );
 
-    document.getElementById(
-        "assistantRevenue"
-    ).textContent =
-        `₹${(data.total_revenue / 10000000).toFixed(2)} Cr`;
+    const profit =
+        document.getElementById(
+            "assistantProfit"
+        );
 
-    document.getElementById(
-        "assistantExpenses"
-    ).textContent =
-        `₹${(data.expenses / 10000000).toFixed(2)} Cr`;
+    if (revenue) {
 
-    document.getElementById(
-        "assistantProfit"
-    ).textContent =
-        `${data.profit_margin}%`;
+        revenue.textContent =
+            `₹${(
+                data.total_revenue / 10000000
+            ).toFixed(2)} Cr`;
+    }
+
+    if (expenses) {
+
+        expenses.textContent =
+            `₹${(
+                data.expenses / 10000000
+            ).toFixed(2)} Cr`;
+    }
+
+    if (profit) {
+
+        profit.textContent =
+            `${data.profit_margin}%`;
+    }
 }
 
 async function loadGSTData() {
