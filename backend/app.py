@@ -6,7 +6,6 @@ from pydantic import BaseModel
 from typing import List, Optional
 import pandas as pd
 from datetime import datetime
-from fastapi import UploadFile, File
 import io
 import json
 import os
@@ -29,6 +28,7 @@ CATEGORY_MAPPING = {
     "Finance": 8
 }
 
+fraud_model_trained = False
 
 app = FastAPI(
     title="AI CFO Platform",
@@ -98,9 +98,17 @@ async def get_dashboard(db: Session = Depends(get_db)):
             "profit_margin": 0
         }
 
-    df = pd.DataFrame(data)
-    total_revenue = df[df['type'] == 'income']['amount'].sum()
-    total_expenses = abs(df[df['type'] == 'expense']['amount'].sum())
+    total_revenue = sum(
+        item["amount"]
+        for item in data
+        if item["type"] == "income"
+    )
+
+    total_expenses = sum(
+        abs(item["amount"])
+        for item in data
+        if item["type"] == "expense"
+    )
     cash_flow = total_revenue - total_expenses
     profit_margin = (cash_flow / total_revenue * 100) if total_revenue > 0 else 0
 
@@ -342,6 +350,9 @@ async def upload_csv(
 
         db.commit()
 
+        global fraud_model_trained
+        fraud_model_trained = False
+
         return {
             "success": True,
             "message": f"{len(transactions_to_insert)} transactions imported successfully"
@@ -377,6 +388,9 @@ async def create_transaction(
     db.commit()
     db.refresh(transaction)
 
+    global fraud_model_trained
+    fraud_model_trained = False
+
     return {
         "id": transaction.id,
         "date": transaction.date.strftime("%Y-%m-%d"),
@@ -400,6 +414,9 @@ async def delete_transaction(
 
     db.delete(tx)
     db.commit()
+
+    global fraud_model_trained
+    fraud_model_trained = False
 
     return {
         "message": "Deleted"
@@ -427,6 +444,9 @@ async def delete_multiple_transactions(
     )
 
     db.commit()
+
+    global fraud_model_trained
+    fraud_model_trained = False
 
     return {
         "message": f"{deleted} transaction(s) deleted successfully"
@@ -460,7 +480,6 @@ async def ai_assistant( query: AIQuery,db: Session = Depends(get_db)):
 
         fraud = await detect_fraud(db)
         compliance = await check_compliance()
-        analytics_data = await analytics(db)
 
         context = f"""
         You are AI CFO, a professional Chief Financial Officer assistant.
@@ -713,6 +732,9 @@ async def reset(db: Session = Depends(get_db)):
     db.query(TransactionModel).delete()
     db.commit()
 
+    global fraud_model_trained
+    fraud_model_trained = False
+
     return {"message": "Database cleared"}
 
 
@@ -757,7 +779,13 @@ async def detect_fraud(
         for item in data
     ])
 
-    fraud_detector.train(df)
+    global fraud_model_trained
+
+    if not fraud_model_trained:
+
+        fraud_detector.train(df)
+
+        fraud_model_trained = True
 
     flagged = 0
     flagged_items = []
