@@ -147,15 +147,24 @@
                     <div id="chat-messages" class="chat-messages">
                     </div>
 
-                    <div class="chat-input">
+                     <div class="chat-input">
 
-                        <input type="text" id="chat-input" placeholder="Ask me anything about your finances...">
+                        <input type="text" id="chat-input" class="form-control" placeholder="Ask about finances...">
 
-                        <button onclick="sendMessage()">
+                        <button class="btn btn-secondary" id="voiceBtn" onclick="startVoiceInput()">
+
+                            🎤 Speak
+
+                        </button>
+
+                        <button class="btn btn-primary" onclick="sendMessage()">
+
                             Send
+
                         </button>
 
                     </div>
+
                     <div class="mt-3 d-flex gap-2 flex-wrap">
 
                         <button class="btn btn-outline-primary btn-sm"
