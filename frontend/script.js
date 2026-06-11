@@ -408,6 +408,121 @@ const AI_SUGGESTIONS = [
     "Summarize recent transactions",
     "What are my biggest risks?"
 ];
+
+function startVoiceInput() {
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+
+        showToast(
+            "Voice recognition not supported",
+            true
+        );
+
+        return;
+    }
+
+    const voiceBtn =
+        document.getElementById(
+            "voiceBtn"
+        );
+
+    const recognition =
+        new SpeechRecognition();
+
+    recognition.lang = "en-IN";
+
+    recognition.interimResults = false;
+
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = function () {
+
+        if (voiceBtn) {
+
+            voiceBtn.innerHTML =
+                "🎙 Listening...";
+
+            voiceBtn.disabled = true;
+        }
+
+        showToast(
+            "Listening..."
+        );
+    };
+
+    recognition.onresult = function (event) {
+
+        const text =
+            event.results[0][0].transcript;
+
+        document.getElementById(
+            "chat-input"
+        ).value = text;
+
+        showToast(
+            "Voice captured successfully"
+        );
+
+        // Auto-send after voice capture
+
+        setTimeout(() => {
+
+            sendMessage();
+
+        }, 300);
+    };
+    recognition.onerror = function () {
+
+        showToast(
+            "Voice recognition failed",
+            true
+        );
+    };
+
+    recognition.onend = function () {
+
+        if (voiceBtn) {
+
+            voiceBtn.innerHTML =
+                "🎤 Speak";
+
+            voiceBtn.disabled = false;
+        }
+    };
+
+    recognition.start();
+}
+
+function speakResponse(text) {
+
+    if (!window.speechSynthesis) {
+        return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance =
+        new SpeechSynthesisUtterance(
+            text
+        );
+
+    utterance.lang = "en-IN";
+
+    utterance.rate = 1;
+
+    utterance.pitch = 1;
+
+    utterance.volume = 1;
+
+    speechSynthesis.speak(
+        utterance
+    );
+}
+
 async function sendMessage() {
 
     const input =
@@ -471,6 +586,9 @@ async function sendMessage() {
         addMessage(
             data.response,
             'bot'
+        );
+        speakResponse(
+            data.response
         );
 
     } catch (error) {

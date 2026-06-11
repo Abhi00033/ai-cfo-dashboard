@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI CFO - Compliance</title>
+    <title>AI CFO - Customers</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
     <link rel="stylesheet" href="style.css">
@@ -33,11 +33,11 @@
                     <i class="fas fa-file-invoice"></i> Transactions
                 </a>
 
-                <a href="customers.html" class="nav-item">
+                <a href="customers.html" class="nav-item active">
                     <i class="fas fa-users"></i> Customers
                 </a>
 
-                <a href="compliance.html" class="nav-item active">
+                <a href="compliance.html" class="nav-item">
                     <i class="fas fa-shield-alt"></i> Compliance
                 </a>
 
@@ -69,13 +69,8 @@
             <!-- Top Nav -->
             <header>
                 <div>
-                    <h2>
-                        Compliance
-                    </h2>
-
-                    <small>
-                        Risk Monitoring & Regulatory Compliance
-                    </small>
+                    <h2>Customers</h2>
+                    <small>Manage customers and business contacts</small>
 
                 </div>
 
@@ -85,11 +80,11 @@
                         🌤️ Loading Weather...
                     </div>
 
-                    <button onclick="openTransactionModal()" class="btn-refresh">
-                        + Add Transaction
+                    <button onclick="openCustomerModal()" class="btn-refresh">
+                        + Add Customer
                     </button>
 
-                    <button id="refreshBtn" onclick="refreshCompliance()" class="btn-refresh">
+                    <button id="refreshBtn" onclick="refreshCustomers()" class="btn-refresh">
                         🔄 Refresh
                     </button>
                     <button id="themeToggle" class="btn-refresh">
@@ -105,113 +100,77 @@
             <div class="quick-stats">
 
                 <div class="quick-card">
-
-                    🛡 Compliance Score
-
-                    <h4 id="complianceScore">
-                        --
-                    </h4>
-
+                    👥 Customers
+                    <h4 id="customerTotal">0</h4>
                 </div>
 
                 <div class="quick-card">
-
-                    ⚠ Risk Alerts
-
-                    <h4 id="riskAlerts">
-                        --
-                    </h4>
-
+                    📧 With Email
+                    <h4 id="emailTotal">0</h4>
                 </div>
 
                 <div class="quick-card">
-
-                    📋 Audit Readiness
-
-                    <h4 id="auditReadiness">
-                        --
-                    </h4>
-
+                    🏢 GST Registered
+                    <h4 id="gstTotal">0</h4>
                 </div>
 
             </div>
 
-            <!-- Compliance Page -->
-            <div class="compliance-page">
 
-                <div class="kpi-grid">
+            <div class="transactions-page">
 
-                    <div class="kpi-card">
+                <div class="
+                        d-flex
+                        justify-content-between
+                        align-items-center
+                        mb-3
+                    ">
 
-                        <h3>
-                            Compliance Status
-                        </h3>
+                    <div class="
+                            d-flex
+                            gap-2
+                            align-items-center
+                        ">
 
-                        <h2 id="compliance">
-                            Loading...
-                        </h2>
-
-                    </div>
-
-                    <div class="kpi-card">
-
-                        <h3>
-                            Fraud Risk
-                        </h3>
-
-                        <h2 id="fraud">
-                            Loading...
-                        </h2>
-
-                    </div>
-
-                    <div class="kpi-card">
-
-                        <h3>
-                            GST Status
-                        </h3>
-
-                        <h2 id="gstStatus">
-                            Loading...
-                        </h2>
-
-                    </div>
-
-                    <div class="kpi-card">
-
-                        <h3>
-                            Audit Score
-                        </h3>
-
-                        <h2 id="auditScore">
-                            Loading...
-                        </h2>
 
                     </div>
 
                 </div>
 
-                <div class="chart-card mt-4">
+                <div class="transactions">
 
-                    <h3>
-                        Compliance Summary
-                    </h3>
+                    <table id="customers-table">
 
-                    <ul id="complianceSummary" class="mb-0">
+                        <thead>
 
-                        <li>
-                            Loading...
-                        </li>
+                            <tr>
+                                <th>Sr No.</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>GSTIN</th>
+                                <th>Action</th>
 
-                    </ul>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="customersBody"></tbody>
+
+                    </table>
+
+                    <!-- Pagination -->
+
+                    <div id="pagination" class="pagination-container mt-4">
+                    </div>
+
                 </div>
 
             </div>
-
         </div>
     </div>
 
-    <div class="modal fade" id="transactionModal" tabindex="-1">
+    <div class="modal fade" id="customerModal" tabindex="-1">
 
         <div class="modal-dialog modal-dialog-centered modal-md">
 
@@ -220,7 +179,7 @@
                 <div class="modal-header">
 
                     <h5 class="modal-title">
-                        Add Transaction
+                        Add Customer
                     </h5>
 
                     <button type="button" class="btn-close" data-bs-dismiss="modal">
@@ -230,85 +189,16 @@
 
                 <div class="modal-body">
 
-                    <!-- Manual Transaction -->
+                    <!-- Manual Customer -->
 
-                    <input type="number" id="txAmount" class="form-control mb-3" placeholder="Amount">
+                    <input type="text" id="customerName" class="form-control mb-3" placeholder="Customer Name">
 
-                    <select id="txCategory" class="form-select mb-3">
+                    <input type="email" id="customerEmail" class="form-control mb-3" placeholder="Email">
 
-                        <option value="Revenue">Revenue</option>
-                        <option value="Operations">Operations</option>
-                        <option value="Investment">Investment</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="Sales">Sales</option>
-                        <option value="HR">HR</option>
-                        <option value="Technology">Technology</option>
-                        <option value="Finance">Finance</option>
+                    <input type="text" id="customerPhone" class="form-control mb-3" placeholder="Phone">
 
-                    </select>
+                    <input type="text" id="customerGSTIN" class="form-control" placeholder="GSTIN">
 
-                    <input type="text" id="txDescription" class="form-control mb-3" placeholder="Description">
-
-                    <select id="txType" class="form-select">
-
-                        <option value="income">
-                            Income
-                        </option>
-
-                        <option value="expense">
-                            Expense
-                        </option>
-
-                    </select>
-
-                    <!-- Divider -->
-
-                    <div class="text-center my-4">
-
-                        <hr>
-
-                        <span class="px-3 bg-white text-muted" style="
-                position: relative;
-                top: -22px;
-            ">
-                            OR
-                        </span>
-
-                    </div>
-
-                    <!-- CSV Upload -->
-
-                    <div class="text-center">
-
-                        <h6 class="fw-bold mb-3">
-                            Import Transactions
-                        </h6>
-
-                        <input type="file" id="csvFile" class="form-control mb-3" accept=".csv">
-
-                        <div class="d-flex justify-content-center gap-2">
-
-                            <button type="button" class="btn btn-outline-primary" onclick="downloadCSVTemplate()">
-                                Download Template
-                            </button>
-
-                            <button type="button" id="uploadCsvBtn" class="btn btn-success" onclick="uploadCSV()">
-                                Upload CSV
-                            </button>
-
-                        </div>
-
-                        <small class="text-muted d-block mt-3">
-                            CSV Format:
-                            amount, category, description, type
-                        </small>
-
-                        <small class="text-muted d-block">
-                            Valid types:
-                            income, expense
-                        </small>
-
-                    </div>
 
                 </div>
 
@@ -318,8 +208,10 @@
                         Cancel
                     </button>
 
-                    <button type="button" class="btn btn-primary" onclick="saveTransaction()">
-                        Save Transaction
+                    <button type="button" class="btn btn-primary" onclick="saveCustomer()">
+
+                        Save Customer
+
                     </button>
 
                 </div>
@@ -333,6 +225,7 @@
     <button class="ai-float-btn" data-bs-toggle="modal" data-bs-target="#aiAssistantModal">
         <i class="fas fa-robot"></i>
     </button>
+
     <div class="modal fade" id="aiAssistantModal" tabindex="-1">
 
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -415,12 +308,12 @@
         </div>
 
     </div>
-
     <div id="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script src="config.js"></script>
     <script src="script.js"></script>
+    <script src="customers.js"></script>
 </body>
 
 </html>

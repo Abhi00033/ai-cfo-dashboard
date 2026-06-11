@@ -17,6 +17,9 @@ from models import TransactionModel, get_db
 from sqlalchemy.orm import Session
 from ml.fraud_detection import fraud_detector
 
+
+from routes.customers import router as customer_router
+
 CATEGORY_MAPPING = {
     "Revenue": 1,
     "Operations": 2,
@@ -35,6 +38,8 @@ app = FastAPI(
     description="AI-Powered Finance, Compliance & Automation Platform",
     version="1.0.0"
 )
+
+app.include_router(customer_router)
 
 # CORS
 app.add_middleware(

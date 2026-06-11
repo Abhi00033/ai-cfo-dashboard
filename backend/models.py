@@ -23,6 +23,11 @@ class TransactionModel(Base):
     description = Column(String)
     type = Column(String)  # income/expense
 
+try:
+    import models_accounting
+except ImportError:
+    pass
+
 # Create tables
 Base.metadata.create_all(bind=engine)
 
