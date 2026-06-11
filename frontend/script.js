@@ -1,10 +1,12 @@
 const API = CONFIG.API_BASE_URL;
 // Initialize Charts
+
 let revenueChart, cashflowChart;
 let dashboardData = null;
 let complianceData = null;
 let fraudData = null;
 let transactionCache = [];
+let shouldSpeakResponse = false;
 
 document
     .getElementById("themeToggle")
@@ -28,6 +30,86 @@ document
                 ? "☀️"
                 : "🌙";
     });
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        const currentPage =
+            window.location.pathname
+                .split("/")
+                .pop();
+
+        document
+            .querySelectorAll(".sidebar .nav-item")
+            .forEach(link => {
+
+                const href =
+                    link.getAttribute("href");
+
+                if (href === currentPage) {
+
+                    link.classList.add(
+                        "active"
+                    );
+
+                } else {
+
+                    link.classList.remove(
+                        "active"
+                    );
+                }
+            });
+
+        const sidebarNav =
+            document.querySelector(
+                ".sidebar nav"
+            );
+
+        if (sidebarNav) {
+
+            const savedPosition =
+                localStorage.getItem(
+                    "sidebarScrollPosition"
+                );
+
+            if (savedPosition) {
+
+                sidebarNav.scrollTop =
+                    parseInt(savedPosition);
+            }
+
+            sidebarNav.addEventListener(
+                "scroll",
+                () => {
+
+                    localStorage.setItem(
+                        "sidebarScrollPosition",
+                        sidebarNav.scrollTop
+                    );
+
+                }
+            );
+
+            // const activeLink =
+            //     document.querySelector(
+            //         ".sidebar .nav-item.active"
+            //     );
+
+            // if (activeLink) {
+
+            //     setTimeout(() => {
+
+            //         activeLink.scrollIntoView({
+            //             behavior: "smooth",
+            //             block: "center"
+            //         });
+
+            //     }, 100);
+            // }
+        }
+    }
+);
 
 
 
@@ -411,6 +493,8 @@ const AI_SUGGESTIONS = [
 
 function startVoiceInput() {
 
+    window.speechSynthesis.cancel();
+
     const SpeechRecognition =
         window.SpeechRecognition ||
         window.webkitSpeechRecognition;
@@ -463,11 +547,11 @@ function startVoiceInput() {
             "chat-input"
         ).value = text;
 
+        shouldSpeakResponse = true;
+
         showToast(
             "Voice captured successfully"
         );
-
-        // Auto-send after voice capture
 
         setTimeout(() => {
 
@@ -505,17 +589,34 @@ function speakResponse(text) {
 
     window.speechSynthesis.cancel();
 
+    let cleanText = text
+        .replace(/#{1,6}\s/g, "")
+        .replace(/\*\*/g, "")
+        .replace(/\*/g, "")
+        .replace(/`/g, "")
+        .replace(/_/g, "")
+        .replace(/\n/g, ". ")
+        .replace(/•/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (cleanText.length > 500) {
+
+        cleanText =
+            cleanText.substring(
+                0,
+                500
+            ) + "...";
+    }
+
     const utterance =
         new SpeechSynthesisUtterance(
-            text
+            cleanText
         );
 
     utterance.lang = "en-IN";
-
     utterance.rate = 1;
-
     utterance.pitch = 1;
-
     utterance.volume = 1;
 
     speechSynthesis.speak(
@@ -587,9 +688,15 @@ async function sendMessage() {
             data.response,
             'bot'
         );
-        speakResponse(
-            data.response
-        );
+
+        if (shouldSpeakResponse) {
+
+            speakResponse(
+                data.response
+            );
+
+            shouldSpeakResponse = false;
+        }
 
     } catch (error) {
 
@@ -858,11 +965,20 @@ window.onload = async function () {
     }
 };
 
-function openTransactionModal() {
+async function openTransactionModal() {
 
-    const modal = new bootstrap.Modal(
-        document.getElementById('transactionModal')
-    );
+    await loadCustomers();
+
+    await loadVendors();
+
+    toggleTransactionParty();
+
+    const modal =
+        new bootstrap.Modal(
+            document.getElementById(
+                "transactionModal"
+            )
+        );
 
     modal.show();
 }
@@ -877,6 +993,134 @@ function closeTransactionModal() {
 
     if (modal) {
         modal.hide();
+    }
+}
+
+async function loadCustomers() {
+
+    const customerSelect =
+        document.getElementById(
+            "customerId"
+        );
+
+    if (!customerSelect) return;
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/customers`
+            );
+
+        const customers =
+            await response.json();
+
+        customerSelect.innerHTML = `
+            <option value="">
+                Select Customer
+            </option>
+        `;
+
+        customers.forEach(customer => {
+
+            customerSelect.innerHTML += `
+                <option value="${customer.id}">
+                    ${customer.name}
+                </option>
+            `;
+        });
+
+    } catch (error) {
+
+        console.error(error);
+    }
+}
+
+
+async function loadVendors() {
+
+    const vendorSelect =
+        document.getElementById(
+            "vendorId"
+        );
+
+    if (!vendorSelect) return;
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/vendors`
+            );
+
+        const vendors =
+            await response.json();
+
+        vendorSelect.innerHTML = `
+            <option value="">
+                Select Vendor
+            </option>
+        `;
+
+        vendors.forEach(vendor => {
+
+            vendorSelect.innerHTML += `
+                <option value="${vendor.id}">
+                    ${vendor.name}
+                </option>
+            `;
+        });
+
+    } catch (error) {
+
+        console.error(error);
+    }
+}
+
+
+function toggleTransactionParty() {
+
+    const type =
+        document.getElementById(
+            "txType"
+        )?.value;
+
+    const customerWrapper =
+        document.getElementById(
+            "customerWrapper"
+        );
+
+    const vendorWrapper =
+        document.getElementById(
+            "vendorWrapper"
+        );
+
+    if (
+        !customerWrapper ||
+        !vendorWrapper
+    ) {
+        return;
+    }
+
+    if (type === "income") {
+
+        customerWrapper.classList.remove(
+            "d-none"
+        );
+
+        vendorWrapper.classList.add(
+            "d-none"
+        );
+
+    } else {
+
+        vendorWrapper.classList.remove(
+            "d-none"
+        );
+
+        customerWrapper.classList.add(
+            "d-none"
+        );
     }
 }
 
@@ -1105,80 +1349,201 @@ async function loadTransactionSummary() {
     }
 }
 
-
 async function saveTransaction() {
 
+    const saveBtn =
+        document.getElementById(
+            "saveTransactionBtn"
+        );
+
+    if (saveBtn?.disabled) {
+        return;
+    }
+
+    const type =
+        document.getElementById(
+            "txType"
+        ).value;
+
     const payload = {
-        date: new Date().toISOString().split('T')[0],
-        amount: parseFloat(document.getElementById('txAmount').value),
-        category: document.getElementById('txCategory').value,
-        description: document.getElementById('txDescription').value.trim(),
-        type: document.getElementById('txType').value
+
+        amount: parseFloat(
+            document.getElementById(
+                "txAmount"
+            ).value
+        ),
+
+        category:
+            document.getElementById(
+                "txCategory"
+            ).value,
+
+        description:
+            document.getElementById(
+                "txDescription"
+            ).value.trim(),
+
+        type,
+
+        customer_id:
+            type === "income"
+                ? Number(
+                    document.getElementById(
+                        "customerId"
+                    ).value
+                ) || null
+                : null,
+
+        vendor_id:
+            type === "expense"
+                ? Number(
+                    document.getElementById(
+                        "vendorId"
+                    ).value
+                ) || null
+                : null
     };
 
-    if (!payload.amount || payload.amount <= 0) {
-        showToast("Please enter valid amount", true);
+    if (
+        !payload.amount ||
+        payload.amount <= 0
+    ) {
+
+        showToast(
+            "Please enter valid amount",
+            true
+        );
+
         return;
     }
 
     if (!payload.description) {
-        showToast("Please enter description", true);
+
+        showToast(
+            "Please enter description",
+            true
+        );
+
+        return;
+    }
+
+    if (
+        payload.type === "income" &&
+        !payload.customer_id
+    ) {
+
+        showToast(
+            "Please select customer",
+            true
+        );
+
+        return;
+    }
+
+    if (
+        payload.type === "expense" &&
+        !payload.vendor_id
+    ) {
+
+        showToast(
+            "Please select vendor",
+            true
+        );
+
         return;
     }
 
     try {
 
-        const response = await fetch(
-            `${API}/transactions`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            }
-        );
+        saveBtn.disabled = true;
 
-        if (response.ok) {
+        saveBtn.innerHTML = `
+            <span
+                class="spinner-border spinner-border-sm me-2">
+            </span>
+            Saving...
+        `;
 
-            closeTransactionModal();
-
-            document.getElementById('txAmount').value = '';
-            document.getElementById('txCategory').selectedIndex = 0;
-            document.getElementById('txDescription').value = '';
-            document.getElementById('txType').selectedIndex = 0;
-
-            await loadTransactions();
-            await loadTransactionSummary();
-
-            if (document.getElementById('revenue')) {
-
-                await fetchDashboardData();
-                await loadStats();
-                await loadAnalytics();
-            }
-
-            showToast(
-                "Transaction added successfully"
+        const response =
+            await fetch(
+                `${API}/transactions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify(
+                        payload
+                    )
+                }
             );
 
-        } else {
+        const data =
+            await response.json();
 
-            showToast(
-                "Failed to add transaction",
-                true
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Failed to save transaction"
             );
         }
+
+        document.getElementById(
+            "txAmount"
+        ).value = "";
+
+        document.getElementById(
+            "txDescription"
+        ).value = "";
+
+        document.getElementById(
+            "customerId"
+        ).selectedIndex = 0;
+
+        document.getElementById(
+            "vendorId"
+        ).selectedIndex = 0;
+
+        closeTransactionModal();
+
+        await loadTransactions();
+
+        await loadTransactionSummary();
+
+        if (
+            document.getElementById(
+                "revenue"
+            )
+        ) {
+
+            await fetchDashboardData();
+
+            await loadStats();
+
+            await loadAnalytics();
+        }
+
+        showToast(
+            "Transaction added successfully"
+        );
 
     } catch (error) {
 
         console.error(error);
 
         showToast(
-            "Server connection failed",
+            error.message,
             true
         );
 
+    } finally {
+
+        saveBtn.disabled = false;
+
+        saveBtn.innerHTML =
+            "Save Transaction";
     }
 }
 
@@ -1252,11 +1617,11 @@ async function loadWeather() {
 function downloadCSVTemplate() {
 
     const csvContent =
-        `amount,category,description,type
-10000,Revenue,Website Project,income
-5000,Marketing,Google Ads Campaign,expense
-2500,HR,Recruitment Expense,expense
-15000,Investment,Mutual Fund Return,income`;
+        `amount,category,description,type,customer_id,vendor_id
+        10000,Revenue,Website Project,income,1,
+        5000,Marketing,Google Ads Campaign,expense,,1
+        2500,HR,Recruitment Expense,expense,,2
+        15000,Investment,Mutual Fund Return,income,2,`;
 
     const blob = new Blob(
         [csvContent],
@@ -1841,7 +2206,6 @@ async function loadExpenseBreakdown() {
     expensePieChart.update();
 }
 
-
 async function loadComplianceInsights() {
 
     try {
@@ -1856,12 +2220,7 @@ async function loadComplianceInsights() {
             return;
 
         const score =
-            fraud.flagged_transactions === 0
-                ? 95
-                : 80;
-
-        const alerts =
-            fraud.flagged_transactions;
+            compliance.compliance_score || 0;
 
         const complianceScore =
             document.getElementById(
@@ -1882,7 +2241,7 @@ async function loadComplianceInsights() {
         if (riskAlerts) {
 
             riskAlerts.textContent =
-                alerts;
+                compliance.alerts.length;
         }
 
         const auditReadiness =
@@ -1893,7 +2252,7 @@ async function loadComplianceInsights() {
         if (auditReadiness) {
 
             auditReadiness.textContent =
-                score > 90
+                score >= 80
                     ? "Ready"
                     : "Review";
         }
@@ -1906,7 +2265,7 @@ async function loadComplianceInsights() {
         if (gstStatus) {
 
             gstStatus.textContent =
-                compliance.status;
+                compliance.gst_filing;
         }
 
         const auditScore =
@@ -1929,31 +2288,35 @@ async function loadComplianceInsights() {
 
             summary.innerHTML = "";
 
-            summary.innerHTML += `
-                <li>
-                    GST Status:
-                    ${compliance.status}
-                </li>
-            `;
+            compliance.alerts.forEach(
+                alert => {
 
-            summary.innerHTML += `
-                <li>
-                    Fraud Alerts:
-                    ${fraud.flagged_transactions}
-                </li>
-            `;
-
-            summary.innerHTML += `
-                <li>
-                    Audit Readiness:
-                    ${score > 90 ? "Ready" : "Review"}
-                </li>
-            `;
+                    summary.innerHTML += `
+                        <li>
+                            ${alert}
+                        </li>
+                    `;
+                }
+            );
 
             summary.innerHTML += `
                 <li>
                     Compliance Score:
                     ${score}%
+                </li>
+            `;
+
+            summary.innerHTML += `
+                <li>
+                    Invoice Count:
+                    ${compliance.invoice_count}
+                </li>
+            `;
+
+            summary.innerHTML += `
+                <li>
+                    Bill Count:
+                    ${compliance.bill_count}
                 </li>
             `;
         }
@@ -2032,6 +2395,15 @@ function setupChat() {
             if (e.key === 'Enter') {
                 sendMessage();
             }
+
+        }
+    );
+
+    chatInput.addEventListener(
+        "focus",
+        () => {
+
+            window.speechSynthesis.cancel();
 
         }
     );
@@ -2159,29 +2531,29 @@ async function loadGSTData() {
             tbody.innerHTML = `
                 <tr>
 
-                    <td>
-                        ₹${(
-                    data.revenue /
-                    100000
-                ).toFixed(2)}L
-                    </td>
-
-                    <td>
-                        ₹${(
+                <td>
+                ₹${(
                     data.gst_collected /
                     100000
                 ).toFixed(2)}L
-                    </td>
+                </td>
 
-                    <td>
-                        ₹${(
+                <td>
+                ₹${(
+                    data.gst_input /
+                    100000
+                ).toFixed(2)}L
+                </td>
+
+                <td>
+                ₹${(
                     data.gst_payable /
                     100000
                 ).toFixed(2)}L
-                    </td>
+                </td>
 
                 </tr>
-            `;
+                `;
         }
 
         const alerts =
@@ -2284,61 +2656,62 @@ async function loadReports() {
     document.getElementById(
         "reportTable"
     ).innerHTML = `
+
         <tr>
-
-            <td>
-                Revenue
-            </td>
-
+            <td>Revenue</td>
             <td>
                 ₹${(
             data.revenue /
             10000000
         ).toFixed(2)} Cr
             </td>
-
         </tr>
 
         <tr>
-
-            <td>
-                Expenses
-            </td>
-
+            <td>Expenses</td>
             <td>
                 ₹${(
             data.expenses /
             10000000
         ).toFixed(2)} Cr
             </td>
-
         </tr>
 
         <tr>
-
-            <td>
-                Profit Margin
-            </td>
-
+            <td>Profit Margin</td>
             <td>
                 ${data.profit_margin}%
             </td>
-
         </tr>
 
         <tr>
-
-            <td>
-                GST Collected
-            </td>
-
+            <td>Output GST</td>
             <td>
                 ₹${(
             data.gst_collected /
             100000
         ).toFixed(2)}L
             </td>
+        </tr>
 
+        <tr>
+            <td>Input GST</td>
+            <td>
+                ₹${(
+            data.gst_input /
+            100000
+        ).toFixed(2)}L
+            </td>
+        </tr>
+
+        <tr>
+            <td>Net GST</td>
+            <td>
+                ₹${(
+            data.gst_payable /
+            100000
+        ).toFixed(2)}L
+            </td>
         </tr>
     `;
 }
@@ -2702,3 +3075,23 @@ async function refreshGST() {
         }, 1500);
     }
 }
+
+window.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        document
+            .getElementById(
+                "aiAssistantModal"
+            )
+            ?.addEventListener(
+                "hidden.bs.modal",
+                () => {
+
+                    window.speechSynthesis.cancel();
+
+                }
+            );
+
+    }
+);

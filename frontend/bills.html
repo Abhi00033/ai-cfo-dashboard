@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI CFO - GST Center</title>
+    <title>AI CFO - Bills</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
     <link rel="stylesheet" href="style.css">
@@ -20,7 +20,7 @@
             <div class="logo">
                 <h2>🤖 AI CFO</h2>
             </div>
-            <nav>
+           <nav>
 
                 <a href="index.html" class="nav-item">
                     <i class="fas fa-tachometer-alt"></i>
@@ -92,15 +92,8 @@
             <!-- Top Nav -->
             <header>
                 <div>
-
-                    <h2>
-                        GST Center
-                    </h2>
-
-                    <small>
-                        GST Monitoring, Filing Status & Tax Insights
-                    </small>
-
+                    <h2>Bills</h2>
+                    <small>Create and manage vendor bills</small>
                 </div>
 
                 <div class="header-right">
@@ -109,12 +102,11 @@
                         🌤️ Loading Weather...
                     </div>
 
-                    <button onclick="openTransactionModal()" class="btn-refresh">
-                        + Add Transaction
+                    <button onclick="openBillModal()" class="btn-refresh">
+                        + Add Bill
                     </button>
 
-                    <button id="refreshBtn" onclick="refreshGST()" class="btn-refresh">
-
+                    <button id="refreshBtn" onclick="refreshBills()" class="btn-refresh">
                         🔄 Refresh
                     </button>
                     <button id="themeToggle" class="btn-refresh">
@@ -126,165 +118,99 @@
                 </div>
 
             </header>
-            <!-- Quick Stats -->
 
             <div class="quick-stats">
 
                 <div class="quick-card">
-
-                    <h6>
-                        GST Collected
-                    </h6>
-
-                    <h4 id="gstCollected">
-                        --
-                    </h4>
-
+                    📄 Total Bills
+                    <h4 id="billTotal">0</h4>
                 </div>
 
                 <div class="quick-card">
-
-                    <h6>
-                        Input Tax Credit
-                    </h6>
-
-                    <h4 id="gstPayable">
-                        --
-                    </h4>
-
+                    ₹ Total Expenses
+                    <h4 id="expenseTotal">₹0</h4>
                 </div>
 
                 <div class="quick-card">
+                    ⏳ Pending
+                    <h4 id="pendingTotal">0</h4>
+                </div>
 
-                    <h6>
-                        Invoices Processed
-                    </h6>
-
-                    <h4 id="invoiceCount">
-                        --
-                    </h4>
-
+                <div class="quick-card">
+                    ✅ Paid
+                    <h4 id="paidTotal">0</h4>
                 </div>
 
             </div>
 
-            <!-- KPI Cards -->
+            <div class="transactions-page">
 
-            <div class="kpi-grid">
+                <div class="
+                        d-flex
+                        justify-content-between
+                        align-items-center
+                        mb-3
+                    ">
 
-                <div class="kpi-card">
+                    <div class="
+                            d-flex
+                            gap-2
+                            align-items-center
+                        ">
 
-                    <h3>
-                        GST Status
-                    </h3>
 
-                    <h2 id="gstStatus">
-                        --
-                    </h2>
-
-                </div>
-
-                <div class="kpi-card">
-
-                    <h3>
-                        GST Rate
-                    </h3>
-
-                    <h2>
-                        18%
-                    </h2>
+                    </div>
 
                 </div>
-
-                <div class="kpi-card">
-
-                    <h3>
-                        Audit Readiness
-                    </h3>
-
-                    <h2 id="auditReadiness">
-                        --
-                    </h2>
-
-                </div>
-
-                <div class="kpi-card">
-
-                    <h3>
-                        Compliance Score
-                    </h3>
-
-                    <h2 id="gstComplianceScore">
-                        --
-                    </h2>
-
-                </div>
-
-            </div>
-
-            <!-- GST Summary -->
-
-            <div class="bottom-grid">
 
                 <div class="transactions">
 
-                    <h3 class="mb-3">
-                        Monthly GST Summary
-                    </h3>
-
-                    <table>
+                    <table id="bills-table">
 
                         <thead>
 
                             <tr>
 
-                                <th>
-                                    Output GST
-                                </th>
+                                <th>Sr No.</th>
 
-                                <th>
-                                    Input GST
-                                </th>
+                                <th>Bill No.</th>
 
-                                <th>
-                                    Net GST
-                                </th>
+                                <th>Vendor</th>
+
+                                <th>Bill Date</th>
+
+                                <th>Due Date</th>
+
+                                <th>Subtotal</th>
+
+                                <th>GST</th>
+
+                                <th>Total</th>
+
+                                <th>Status</th>
+
+                                <th>Action</th>
 
                             </tr>
 
                         </thead>
 
-                        <tbody id="gstTableBody">
-
-                        </tbody>
+                        <tbody id="billsBody"></tbody>
 
                     </table>
 
-                </div>
+                    <!-- Pagination -->
 
-                <div class="chart-card">
-
-                    <h3>
-                        GST Alerts
-                    </h3>
-
-                    <ul id="gstAlerts">
-
-                        <li>
-                            Loading...
-                        </li>
-
-                    </ul>
+                    <div id="pagination" class="pagination-container mt-4">
+                    </div>
 
                 </div>
 
             </div>
-
-
         </div>
     </div>
 
-    <div class="modal fade" id="transactionModal" tabindex="-1">
+    <div class="modal fade" id="billModal" tabindex="-1">
 
         <div class="modal-dialog modal-dialog-centered modal-md">
 
@@ -293,7 +219,7 @@
                 <div class="modal-header">
 
                     <h5 class="modal-title">
-                        Add Transaction
+                        Add Bill
                     </h5>
 
                     <button type="button" class="btn-close" data-bs-dismiss="modal">
@@ -303,135 +229,63 @@
 
                 <div class="modal-body">
 
-                    <input type="number" id="txAmount" class="form-control mb-3" placeholder="Amount">
+                    <input type="text" id="billNumber" class="form-control mb-3" placeholder="Bill Number">
 
-                    <select id="txCategory" class="form-select mb-3">
+                    <select id="vendorId" class="form-select mb-3">
 
-                        <option value="Revenue">Revenue</option>
-                        <option value="Operations">Operations</option>
-                        <option value="Investment">Investment</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="Sales">Sales</option>
-                        <option value="HR">HR</option>
-                        <option value="Technology">Technology</option>
-                        <option value="Finance">Finance</option>
-
-                    </select>
-
-                    <input type="text" id="txDescription" class="form-control mb-3" placeholder="Description">
-
-                    <select id="txType" class="form-select mb-3" onchange="toggleTransactionParty()">
-
-                        <option value="income">
-                            Income
-                        </option>
-
-                        <option value="expense">
-                            Expense
+                        <option value="">
+                            Select Vendor
                         </option>
 
                     </select>
 
-                    <!-- Customer Dropdown -->
+                    <label class="mb-1">
+                        Bill Date
+                    </label>
 
-                    <div id="customerWrapper" class="mb-3">
+                    <input type="date" id="billDate" class="form-control mb-3">
 
-                        <select id="customerId" class="form-select">
+                    <label class="mb-1">
+                        Due Date
+                    </label>
 
-                            <option value="">
-                                Select Customer
-                            </option>
+                    <input type="date" id="dueDate" class="form-control mb-3">
 
-                        </select>
+                    <input type="number" id="subtotal" class="form-control mb-3" placeholder="Subtotal"
+                        oninput="calculateBillTotals()">
 
-                    </div>
+                    <input type="number" id="gstRate" class="form-control mb-3" placeholder="GST Rate %" value="18"
+                        oninput="calculateBillTotals()">
 
-                    <!-- Vendor Dropdown -->
+                    <input type="number" id="gstAmount" class="form-control mb-3" placeholder="GST Amount" readonly>
 
-                    <div id="vendorWrapper" class="mb-3 d-none">
+                    <input type="number" id="totalAmount" class="form-control mb-3" placeholder="Total Amount" readonly>
 
-                        <select id="vendorId" class="form-select">
+                    <select id="billStatus" class="form-select">
 
-                            <option value="">
-                                Select Vendor
-                            </option>
+                        <option value="Pending">
+                            Pending
+                        </option>
 
-                        </select>
+                        <option value="Paid">
+                            Paid
+                        </option>
 
-                    </div>
-
-                    <div class="text-center my-4">
-
-                        <hr>
-
-                        <span class="px-3 bg-white text-muted" style="
-                position: relative;
-                top: -22px;
-            ">
-
-                            OR
-
-                        </span>
-
-                    </div>
-
-                    <div class="text-center">
-
-                        <h6 class="fw-bold mb-3">
-                            Import Transactions
-                        </h6>
-
-                        <input type="file" id="csvFile" class="form-control mb-3" accept=".csv">
-
-                        <div class="d-flex justify-content-center gap-2">
-
-                            <button type="button" class="btn btn-outline-primary" onclick="downloadCSVTemplate()">
-
-                                Download Template
-
-                            </button>
-
-                            <button type="button" id="uploadCsvBtn" class="btn btn-success" onclick="uploadCSV()">
-
-                                Upload CSV
-
-                            </button>
-
-                        </div>
-
-                        <small class="text-muted d-block mt-3">
-
-                            CSV Format:
-
-                            amount,category,description,type,customer_id,vendor_id
-
-                        </small>
-
-                        <small class="text-muted d-block">
-
-                            Income → customer_id required
-
-                        </small>
-
-                        <small class="text-muted d-block">
-
-                            Expense → vendor_id required
-
-                        </small>
-
-                    </div>
+                    </select>
 
                 </div>
 
                 <div class="modal-footer">
 
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+
                         Cancel
+
                     </button>
 
-                    <button type="button" class="btn btn-primary" id="saveTransactionBtn" onclick="saveTransaction()">
+                    <button type="button" class="btn btn-primary" id="saveBillBtn" onclick="saveBill()">
 
-                        Save Transaction
+                        Save Bill
 
                     </button>
 
@@ -534,6 +388,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script src="config.js"></script>
     <script src="script.js"></script>
+    <script src="bills.js"></script>
 </body>
 
 </html>

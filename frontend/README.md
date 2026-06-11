@@ -1,91 +1,386 @@
 # AI CFO Frontend
 
-Modern multi-page financial dashboard built for the AI CFO Platform.
+Modern AI-powered financial management dashboard built for the AI CFO Platform.
 
-## Created By
-
-**Smart Solutions Team**
+Created by **Smart Solutions Team**
 
 ---
 
-## Features
+# Features
 
-### Dashboard
+## Dashboard
 
 * Revenue KPI
+* Expense KPI
 * Cash Flow KPI
-* Expenses KPI
 * Profit Margin KPI
+* Financial Health Score
 * Compliance Status
 * Fraud Risk Indicator
 * Recent Transactions
 * Quick AI Assistant Access
 
-### Analytics Page
+---
 
-* Revenue Trend Chart
+## Analytics
+
+* Revenue Trend Analysis
 * Cash Flow Analysis
+* Expense Breakdown
+* Financial Insights
+* Smart Business Alerts
 * Interactive Charts using Chart.js
-
-### Transactions Page
-
-* View All Transactions
-* Pagination Support
-* Add Transaction
-* Delete Transaction
-* Latest Transactions on Dashboard
-
-### Compliance Page
-
-* Compliance Monitoring
-* GST Filing Status
-* Fraud Risk Monitoring
-* Compliance Summary
-
-### AI Assistant Page
-
-* AI CFO Chat Interface
-* Financial Query Support
-* Real-time Responses
 
 ---
 
-## Tech Stack
+## Transaction Management
+
+* Create Transactions
+* View Transactions
+* Delete Transactions
+* Income & Expense Tracking
+* Transaction Categorization
+
+---
+
+## Customer Management
+
+* Create Customers
+* View Customers
+* Update Customers
+* Delete Customers
+* GSTIN Tracking
+
+---
+
+## Vendor Management
+
+* Create Vendors
+* View Vendors
+* Update Vendors
+* Delete Vendors
+* GSTIN Tracking
+
+---
+
+## Invoice Management
+
+* Create Invoices
+* View Invoices
+* Update Invoices
+* Delete Invoices
+* GST Calculation
+* Invoice Status Tracking
+
+---
+
+## Bill Management
+
+* Create Bills
+* View Bills
+* Update Bills
+* Delete Bills
+* GST Calculation
+* Vendor Liability Tracking
+
+---
+
+## GST Center
+
+* Output GST Monitoring
+* Input GST Monitoring
+* GST Payable Calculation
+* GST Readiness Status
+* GST Compliance Score
+
+---
+
+## Compliance Monitoring
+
+* Compliance Score
+* Audit Readiness
+* GST Filing Readiness
+* Risk Assessment
+* Compliance Alerts
+* Fraud Monitoring
+
+---
+
+## Reports
+
+* Revenue Summary
+* Expense Summary
+* Cash Flow Summary
+* Profit Margin Analysis
+* GST Summary
+* Fraud Status
+* Compliance Status
+
+---
+
+## AI CFO Assistant
+
+Powered by Groq LLM
+
+Model:
+
+```text
+llama-3.3-70b-versatile
+```
+
+Capabilities:
+
+* Revenue Analysis
+* Expense Analysis
+* Cash Flow Analysis
+* Profitability Review
+* Customer Analysis
+* Vendor Analysis
+* Invoice Analysis
+* Bill Analysis
+* GST Review
+* Compliance Review
+* Fraud Risk Assessment
+* Business Health Assessment
+
+---
+
+## Voice Assistant
+
+* Speech Recognition
+* Voice-Based Queries
+* AI Voice Responses
+* Hands-Free Financial Insights
+
+---
+
+# Technology Stack
+
+## Frontend
 
 * HTML5
 * CSS3
 * Bootstrap 5
-* JavaScript
+* JavaScript (ES6)
 * Chart.js
 * Font Awesome
 
 ---
 
-## Project Structure
+## APIs
 
-frontend/
+Connected with FastAPI Backend APIs.
 
-├── index.html
+Modules:
 
-├── analytics.html
-
-├── transactions.html
-
-├── compliance.html
-
-├── assistant.html
-
-├── style.css
-
-├── script.js
-
-├── config.js
-
-└── README.md
+* Dashboard API
+* Transactions API
+* Customers API
+* Vendors API
+* Invoices API
+* Bills API
+* GST API
+* Compliance API
+* Fraud API
+* Reports API
+* AI Assistant API
 
 ---
 
-## Configuration
+# Project Structure
+
+```text
+frontend/
+
+├── index.html
+├── analytics.html
+├── transactions.html
+├── customers.html
+├── vendors.html
+├── invoices.html
+├── bills.html
+├── gst.html
+├── reports.html
+├── compliance.html
+├── assistant.html
+
+├── script.js
+├── customers.js
+├── vendors.js
+├── invoice.js
+├── bills.js
+
+├── style.css
+├── config.js
+
+└── README.md
+```
+
+---
+
+# Pages
+
+## Dashboard
+
+```text
+index.html
+```
+
+Displays:
+
+* Revenue
+* Expenses
+* Cash Flow
+* Profit Margin
+* Compliance Status
+* Fraud Risk
+* Recent Transactions
+
+---
+
+## Analytics
+
+```text
+analytics.html
+```
+
+Displays:
+
+* Revenue Trends
+* Cash Flow Trends
+* Expense Breakdown
+* Financial Insights
+
+---
+
+## Transactions
+
+```text
+transactions.html
+```
+
+Displays:
+
+* Income Transactions
+* Expense Transactions
+* Transaction Management
+
+---
+
+## Customers
+
+```text
+customers.html
+```
+
+Displays:
+
+* Customer Records
+* Customer Management
+
+---
+
+## Vendors
+
+```text
+vendors.html
+```
+
+Displays:
+
+* Vendor Records
+* Vendor Management
+
+---
+
+## Invoices
+
+```text
+invoices.html
+```
+
+Displays:
+
+* Invoice Records
+* GST Information
+* Invoice Status
+
+---
+
+## Bills
+
+```text
+bills.html
+```
+
+Displays:
+
+* Bill Records
+* GST Information
+* Vendor Liabilities
+
+---
+
+## GST Center
+
+```text
+gst.html
+```
+
+Displays:
+
+* Output GST
+* Input GST
+* GST Payable
+* Compliance Readiness
+
+---
+
+## Reports
+
+```text
+reports.html
+```
+
+Displays:
+
+* Financial Summary
+* GST Summary
+* Fraud Status
+* Compliance Status
+
+---
+
+## Compliance
+
+```text
+compliance.html
+```
+
+Displays:
+
+* Compliance Score
+* Risk Alerts
+* Audit Readiness
+* Compliance Insights
+
+---
+
+## AI Assistant
+
+```text
+assistant.html
+```
+
+Displays:
+
+* AI CFO Chat Interface
+* Voice Assistant
+* Financial Recommendations
+
+---
+
+# Configuration
 
 All frontend configuration is stored inside:
 
@@ -105,13 +400,13 @@ const CONFIG = {
 
 ---
 
-## Running Frontend
+# Running Frontend
 
 Start backend first:
 
 ```bash
 cd backend
-python app.py
+uvicorn app:app --reload
 ```
 
 Then open:
@@ -120,65 +415,62 @@ Then open:
 frontend/index.html
 ```
 
-in your browser.
+or run using:
 
----
-
-## Pages
-
-### Dashboard
-
-```text
-index.html
+```bash
+npx serve .
 ```
 
-### Analytics
+or
 
-```text
-analytics.html
-```
-
-### Transactions
-
-```text
-transactions.html
-```
-
-### Compliance
-
-```text
-compliance.html
-```
-
-### AI Assistant
-
-```text
-assistant.html
+```bash
+python -m http.server 5500
 ```
 
 ---
 
-## Deployment
+# Deployment
 
-Recommended:
+## Frontend
 
-### Frontend
+Recommended Platforms:
 
 * Netlify
-* GitHub Pages
 * Vercel
+* GitHub Pages
 
-### Backend
+---
+
+## Backend
+
+Recommended Platforms:
 
 * Render
 * Railway
 * Fly.io
+* Azure App Service
+* AWS EC2
 
 ---
 
-## Hackathon Project
+# Future Enhancements
 
-AI CFO Platform developed for the Fireblaze Tech League.
+* User Authentication
+* Multi-User Accounts
+* Role-Based Access Control
+* Dark Mode
+* PDF Report Export
+* Excel Export
+* Advanced Forecasting
+* Predictive Analytics
+* Mobile Application
 
-Created by **Smart Solutions Team**.
-# AI CFO Dashboard"
+---
+
+# Project
+
+**AI CFO Platform**
+
+AI-powered financial analytics, accounting management, GST tracking, compliance monitoring, fraud detection, reporting, and intelligent business insights.
+
+Created by **Smart Solutions Team**

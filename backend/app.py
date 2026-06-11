@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 import uvicorn
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 import pandas as pd
 from datetime import datetime
 import io
@@ -19,6 +19,16 @@ from ml.fraud_detection import fraud_detector
 
 
 from routes.customers import router as customer_router
+from routes.transactions import router as transaction_router
+from routes.vendors import router as vendor_router
+from routes.invoices import router as invoice_router
+from routes.bills import router as bills_router
+from models_accounting import (
+    CustomerModel,
+    VendorModel,
+    InvoiceModel,
+    BillModel
+)
 
 CATEGORY_MAPPING = {
     "Revenue": 1,
@@ -40,6 +50,11 @@ app = FastAPI(
 )
 
 app.include_router(customer_router)
+app.include_router(transaction_router)
+app.include_router(vendor_router)
+app.include_router(invoice_router)
+app.include_router(bills_router)
+
 
 # CORS
 app.add_middleware(
@@ -51,13 +66,6 @@ app.add_middleware(
 )
 
 # Models
-class Transaction(BaseModel):
-    id: Optional[int] = None
-    date: str
-    amount: float
-    category: str
-    description: str
-    type: str  # income/expense
 
 class DashboardData(BaseModel):
     total_revenue: float
@@ -68,8 +76,6 @@ class DashboardData(BaseModel):
 class AIQuery(BaseModel):
     query: str
 
-class DeleteTransactionsRequest(BaseModel):
-    ids: list[int]
 
 # Load environment variables
 load_dotenv()
@@ -192,6 +198,68 @@ async def dashboard_insights(
     }
 
 
+@app.get("/gst/summary")
+async def gst_summary(
+    db: Session = Depends(get_db)
+):
+
+    invoices = db.query(
+        InvoiceModel
+    ).all()
+
+    bills = db.query(
+        BillModel
+    ).all()
+
+    gst_collected = sum(
+        invoice.gst_amount or 0
+        for invoice in invoices
+    )
+
+    gst_input = sum(
+        bill.gst_amount or 0
+        for bill in bills
+    )
+
+    gst_payable = (
+        gst_collected -
+        gst_input
+    )
+
+    return {
+
+        "gst_collected":
+            round(gst_collected, 2),
+
+        "gst_input":
+            round(gst_input, 2),
+
+        "gst_payable":
+            round(gst_payable, 2),
+
+        "invoice_count":
+            len(invoices),
+
+        "bill_count":
+            len(bills),
+
+        "status":
+            "Payable"
+            if gst_payable > 0
+            else "Refund"
+            if gst_payable < 0
+            else "Balanced",
+
+        "audit_readiness":
+            "Ready"
+            if len(invoices) > 0 and len(bills) > 0
+            else "Pending",
+
+        "compliance_score":
+            100
+            - (20 if len(invoices) == 0 else 0)
+            - (20 if len(bills) == 0 else 0)
+    }
 
 @app.get("/expense-breakdown")
 async def expense_breakdown(
@@ -225,250 +293,90 @@ async def expense_breakdown(
     }
 
 
-@app.get("/transactions")
-async def get_transactions(db: Session = Depends(get_db)):
-    transactions = db.query(TransactionModel).all()
-
-    return [
-        {
-            "id": t.id,
-            "date": t.date.strftime("%Y-%m-%d"),
-            "amount": t.amount,
-            "category": t.category,
-            "description": t.description,
-            "type": t.type
-        }
-        for t in transactions
-    ]
-
-
-
-@app.post("/transactions/upload-csv")
-async def upload_csv(
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db)
-):
-    try:
-
-        if not file.filename.endswith(".csv"):
-
-            raise HTTPException(
-                status_code=400,
-                detail="Please upload a CSV file"
-            )
-
-        contents = await file.read()
-
-        df = pd.read_csv(
-            io.StringIO(
-                contents.decode("utf-8")
-            )
-        )
-
-        required_columns = [
-            "amount",
-            "category",
-            "description",
-            "type"
-        ]
-
-        missing_columns = [
-            col
-            for col in required_columns
-            if col not in df.columns
-        ]
-
-        if missing_columns:
-
-            raise HTTPException(
-                status_code=400,
-                detail=f"Missing columns: {', '.join(missing_columns)}"
-            )
-
-        valid_categories = [
-            "Revenue",
-            "Operations",
-            "Investment",
-            "Marketing",
-            "Sales",
-            "HR",
-            "Technology",
-            "Finance"
-        ]
-
-        valid_types = [
-            "income",
-            "expense"
-        ]
-
-        transactions_to_insert = []
-
-        # Validate ALL rows first
-        for index, row in df.iterrows():
-
-            amount = row["amount"]
-            category = str(row["category"]).strip()
-            description = str(row["description"]).strip()
-            tx_type = str(row["type"]).strip().lower()
-
-            if pd.isna(amount):
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Row {index + 2}: Amount is required"
-                )
-
-            if not description:
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Row {index + 2}: Description is required"
-                )
-
-            if category not in valid_categories:
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Row {index + 2}: Invalid category '{category}'"
-                )
-
-            if tx_type not in valid_types:
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Row {index + 2}: Type must be income or expense"
-                )
-
-            transactions_to_insert.append(
-                TransactionModel(
-                    amount=float(amount),
-                    category=category,
-                    description=description,
-                    type=tx_type
-                )
-            )
-
-        # Insert only if ALL rows are valid
-        for transaction in transactions_to_insert:
-
-            db.add(transaction)
-
-        db.commit()
-
-        global fraud_model_trained
-        fraud_model_trained = False
-
-        return {
-            "success": True,
-            "message": f"{len(transactions_to_insert)} transactions imported successfully"
-        }
-
-    except HTTPException:
-        raise
-
-    except Exception as e:
-
-        db.rollback()
-
-        raise HTTPException(
-            status_code=500,
-            detail=f"Import failed: {str(e)}"
-        )
-
-
-
-@app.post("/transactions")
-async def create_transaction(
-    tx: Transaction,
-    db: Session = Depends(get_db)
-):
-    transaction = TransactionModel(
-        amount=tx.amount,
-        category=tx.category,
-        description=tx.description,
-        type=tx.type
-    )
-
-    db.add(transaction)
-    db.commit()
-    db.refresh(transaction)
-
-    global fraud_model_trained
-    fraud_model_trained = False
-
-    return {
-        "id": transaction.id,
-        "date": transaction.date.strftime("%Y-%m-%d"),
-        "amount": transaction.amount,
-        "category": transaction.category,
-        "description": transaction.description,
-        "type": transaction.type
-    }
-
-@app.delete("/transactions/{id}")
-async def delete_transaction(
-    id: int,
-    db: Session = Depends(get_db)
-):
-    tx = db.query(TransactionModel).filter(
-        TransactionModel.id == id
-    ).first()
-
-    if not tx:
-        raise HTTPException(404)
-
-    db.delete(tx)
-    db.commit()
-
-    global fraud_model_trained
-    fraud_model_trained = False
-
-    return {
-        "message": "Deleted"
-    }
-
-@app.post("/transactions/delete-multiple")
-async def delete_multiple_transactions(
-    payload: DeleteTransactionsRequest,
-    db: Session = Depends(get_db)
-):
-
-    if not payload.ids:
-
-        raise HTTPException(
-            status_code=400,
-            detail="No transactions selected"
-        )
-
-    deleted = db.query(
-        TransactionModel
-    ).filter(
-        TransactionModel.id.in_(payload.ids)
-    ).delete(
-        synchronize_session=False
-    )
-
-    db.commit()
-
-    global fraud_model_trained
-    fraud_model_trained = False
-
-    return {
-        "message": f"{deleted} transaction(s) deleted successfully"
-    }
-
-
 @app.get("/compliance/check")
-async def check_compliance():
-    # Mock GST & Compliance Check
+async def check_compliance(
+    db: Session = Depends(get_db)
+):
+
+    invoices = db.query(
+        InvoiceModel
+    ).all()
+
+    bills = db.query(
+        BillModel
+    ).all()
+
+    fraud = await detect_fraud(db)
+
+    alerts = []
+
+    score = 100
+
+    invoice_count = len(invoices)
+
+    bill_count = len(bills)
+
+    if invoice_count == 0:
+
+        score -= 20
+
+        alerts.append(
+            "No invoices available"
+        )
+
+    if bill_count == 0:
+
+        score -= 20
+
+        alerts.append(
+            "No vendor bills available"
+        )
+
+    if fraud["flagged_transactions"] > 0:
+
+        score -= 20
+
+        alerts.append(
+            f"{fraud['flagged_transactions']} suspicious transaction(s) detected"
+        )
+
+    gst_status = (
+        "Ready"
+        if invoice_count > 0 and bill_count > 0
+        else "Pending"
+    )
+
+    status = (
+        "Compliant"
+        if score >= 80
+        else "Review Required"
+    )
+
     return {
-        "status": "Compliant",
-        "gst_filing": "Due in 7 days",
-        "risk_score": 12,
-        "alerts": [
-            "Quarterly GST return pending",
-            "High expense in 'Marketing' category"
-        ]
+
+        "status":
+            status,
+
+        "gst_filing":
+            gst_status,
+
+        "risk_score":
+            max(
+                0,
+                100 - score
+            ),
+
+        "alerts":
+            alerts,
+
+        "compliance_score":
+            score,
+
+        "invoice_count":
+            invoice_count,
+
+        "bill_count":
+            bill_count
     }
 
 @app.post("/ai/assistant")
@@ -481,72 +389,189 @@ async def ai_assistant( query: AIQuery,db: Session = Depends(get_db)):
         # Get current financial context
 
         dashboard = await get_dashboard(db)
-        transactions = await get_transactions(db)
+        transactions = db.query(
+            TransactionModel
+        ).all()
+
+        transactions = [
+            {
+                "id": t.id,
+                "amount": t.amount,
+                "category": t.category,
+                "description": t.description,
+                "type": t.type
+            }
+            for t in transactions
+        ]
 
         fraud = await detect_fraud(db)
-        compliance = await check_compliance()
+        compliance = await check_compliance(db)
+
+        customers = db.query(
+            CustomerModel
+        ).all()
+
+        vendors = db.query(
+            VendorModel
+        ).all()
+
+        invoices = db.query(
+            InvoiceModel
+        ).all()
+
+        bills = db.query(
+            BillModel
+        ).all()
+
+        gst = await gst_summary(db)
+
+        customer_data = [
+            {
+                "id": c.id,
+                "name": c.name,
+                "email": c.email,
+                "gstin": c.gstin
+            }
+            for c in customers
+        ]
+
+        vendor_data = [
+            {
+                "id": v.id,
+                "name": v.name,
+                "email": v.email,
+                "gstin": v.gstin
+            }
+            for v in vendors
+        ]
+
+        invoice_data = [
+            {
+                "invoice_number": i.invoice_number,
+                "customer_id": i.customer_id,
+                "total_amount": i.total_amount,
+                "gst_amount": i.gst_amount,
+                "status": i.status
+            }
+            for i in invoices
+        ]
+
+        bill_data = [
+            {
+                "bill_number": b.bill_number,
+                "vendor_id": b.vendor_id,
+                "total_amount": b.total_amount,
+                "gst_amount": b.gst_amount,
+                "status": b.status
+            }
+            for b in bills
+        ]
 
         context = f"""
         You are AI CFO, a professional Chief Financial Officer assistant.
 
-        BUSINESS DATA
+        BUSINESS OVERVIEW
 
         Revenue: ₹{dashboard['total_revenue']/10000000:.2f} Cr
         Cash Flow: ₹{dashboard['cash_flow']/10000000:.2f} Cr
         Expenses: ₹{dashboard['expenses']/10000000:.2f} Cr
         Profit Margin: {dashboard['profit_margin']}%
 
+        FRAUD ANALYSIS
+
         Fraud Status: {fraud['status']}
         Flagged Transactions: {fraud['flagged_transactions']}
         Fraud Score: {fraud['fraud_score']}%
 
+        COMPLIANCE ANALYSIS
+
         Compliance Status: {compliance['status']}
         GST Filing: {compliance['gst_filing']}
         Risk Score: {compliance['risk_score']}
+        Compliance Score: {compliance['compliance_score']}%
+
+        CUSTOMERS
+
+        Total Customers: {len(customers)}
+
+        Recent Customers:
+        {str(customer_data[:10])}
+
+        VENDORS
+
+        Total Vendors: {len(vendors)}
+
+        Recent Vendors:
+        {str(vendor_data[:10])}
+
+        INVOICES
+
+        Total Invoices: {len(invoices)}
+
+        Recent Invoices:
+        {str(invoice_data[:15])}
+
+        BILLS
+
+        Total Bills: {len(bills)}
+
+        Recent Bills:
+        {str(bill_data[:15])}
+
+        GST SUMMARY
+
+        Output GST: ₹{gst['gst_collected']:,.2f}
+        Input GST: ₹{gst['gst_input']:,.2f}
+        GST Payable: ₹{gst['gst_payable']:,.2f}
+        GST Status: {gst['status']}
+
+        TRANSACTIONS
+
+        Total Transactions: {len(transactions)}
 
         Recent Transactions:
-        {str(transactions[:10])}
+        {str(transactions[:15])}
 
-        Rules:
+        IMPORTANT BUSINESS RULES
 
-        - Always answer based on actual business data.
-        - Never give generic responses.
-        - Keep answers easy to read.
-        - Use headings.
-        - Use bullet points.
+        - Customers generate revenue through invoices and income transactions.
+        - Vendors generate expenses through bills and expense transactions.
+        - GST Output comes from invoices.
+        - GST Input Tax Credit comes from bills.
+        - GST Payable = Output GST - Input GST.
+        - Revenue and Expenses come from transactions.
+        - Fraud analysis is based on transaction patterns.
+        - Compliance is based on invoices, bills and fraud analysis.
+
+        ANSWERING RULES
+
+        - Always answer using the provided business data.
+        - Never invent numbers.
+        - If information is unavailable, clearly say so.
+        - Use professional CFO language.
+        - Use headings and bullet points.
         - Use Indian currency format.
-        - Give business recommendations.
+        - Give practical recommendations.
+        - Be concise but informative.
 
-        Question Categories:
+        QUESTION TYPES
 
-        Cash Flow:
-        Explain health, strengths, risks and recommendations.
+        Revenue Analysis
+        Expense Analysis
+        Cash Flow Analysis
+        Profitability Analysis
+        Fraud Risk Assessment
+        Compliance Review
+        GST Review
+        Customer Analysis
+        Vendor Analysis
+        Invoice Analysis
+        Bill Analysis
+        Transaction Analysis
+        Business Health Review
+        Business Summary
 
-        Revenue:
-        Explain growth, trends and opportunities.
-
-        Expenses:
-        Explain biggest expenses and cost-saving opportunities.
-
-        Profit:
-        Explain profitability and improvement suggestions.
-
-        Fraud:
-        Explain suspicious transactions and risk level.
-
-        Compliance:
-        Explain compliance status, GST status and audit readiness.
-
-        Analytics:
-        Explain trends visible in charts and financial performance.
-
-        Transactions:
-        Explain income, expenses and transaction patterns.
-
-        Business Health:
-        Combine revenue, profit, cash flow, fraud and compliance.
-
-        Always act like a CFO.
+        Always act like an experienced CFO.
         """
         
         response = client.chat.completions.create(
@@ -605,79 +630,8 @@ async def ai_assistant( query: AIQuery,db: Session = Depends(get_db)):
         
         return {"response": answer, "timestamp": datetime.now().isoformat(), "model": "fallback"}
 
-@app.get("/seed")
-async def seed(db: Session = Depends(get_db)):
 
-    existing = db.query(TransactionModel).count()
 
-    if existing > 0:
-        return {
-            "message": "Data already exists"
-        }
-    
-    records = [
-        TransactionModel(
-            amount=82450000,
-            category="Revenue",
-            description="Q2 Sales",
-            type="income"
-        ),
-        TransactionModel(
-            amount=-12340000,
-            category="Operations",
-            description="Employee Salaries",
-            type="expense"
-        ),
-        TransactionModel(
-            amount=4500000,
-            category="Investment",
-            description="Return on Investments",
-            type="income"
-        )
-    ]
-
-    for record in records:
-        db.add(record)
-
-    db.commit()
-
-    return {"message": "Sample data inserted"}
-
-@app.get("/stats")
-async def stats(db: Session = Depends(get_db)):
-
-    transactions = db.query(TransactionModel).all()
-
-    income = sum(
-        t.amount
-        for t in transactions
-        if t.type == "income"
-    )
-
-    expense = sum(
-        abs(t.amount)
-        for t in transactions
-        if t.type == "expense"
-    )
-
-    return {
-        "transactions": len(transactions),
-        "income": income,
-        "expense": expense
-    }
-
-@app.get("/categories")
-async def get_categories():
-    return [
-        "Revenue",
-        "Operations",
-        "Investment",
-        "Marketing",
-        "Sales",
-        "HR",
-        "Technology",
-        "Finance"
-    ]
 
 @app.get("/analytics")
 async def analytics(db: Session = Depends(get_db)):
@@ -731,17 +685,40 @@ async def analytics(db: Session = Depends(get_db)):
         "expenses": expenses
     }
 
-@app.get("/reset")
-async def reset(db: Session = Depends(get_db)):
 
-    db.query(TransactionModel).delete()
-    db.commit()
+@app.get("/analytics/insights")
+async def analytics_insights(
+    db: Session = Depends(get_db)
+):
 
-    global fraud_model_trained
-    fraud_model_trained = False
+    customer_count = db.query(
+        CustomerModel
+    ).count()
 
-    return {"message": "Database cleared"}
+    vendor_count = db.query(
+        VendorModel
+    ).count()
 
+    invoice_count = db.query(
+        InvoiceModel
+    ).count()
+
+    bill_count = db.query(
+        BillModel
+    ).count()
+
+    gst = await gst_summary(db)
+
+    fraud = await detect_fraud(db)
+
+    return {
+        "customer_count": customer_count,
+        "vendor_count": vendor_count,
+        "invoice_count": invoice_count,
+        "bill_count": bill_count,
+        "gst_payable": gst["gst_payable"],
+        "fraud_count": fraud["flagged_transactions"]
+    }
 
 @app.get("/fraud/detect")
 async def detect_fraud(
@@ -830,53 +807,6 @@ async def detect_fraud(
             f"{flagged} unusual transaction(s) detected"
     }
 
-@app.get("/gst/summary")
-async def gst_summary(
-    db: Session = Depends(get_db)
-):
-
-    transactions = db.query(
-        TransactionModel
-    ).all()
-
-    revenue = sum(
-        t.amount
-        for t in transactions
-        if t.type == "income"
-    )
-
-    gst_collected = round(
-        revenue * 0.18,
-        2
-    )
-
-    gst_payable = round(
-        gst_collected * 0.25,
-        2
-    )
-
-    return {
-
-        "revenue": revenue,
-
-        "gst_collected":
-            gst_collected,
-
-        "gst_payable":
-            gst_payable,
-
-        "invoice_count":
-            len(transactions),
-
-        "status":
-            "Compliant",
-
-        "audit_readiness":
-            "Ready",
-
-        "compliance_score":
-            95
-    }
 
 @app.get("/reports/summary")
 async def reports_summary(
@@ -886,13 +816,29 @@ async def reports_summary(
 
     fraud = await detect_fraud(db)
 
-    compliance = await check_compliance()
+    compliance = await check_compliance(db)
 
-    gst_revenue = dashboard["total_revenue"]
+    invoices = db.query(
+        InvoiceModel
+    ).all()
 
-    gst_collected = round(
-        gst_revenue * 0.18,
-        2
+    bills = db.query(
+        BillModel
+    ).all()
+
+    gst_collected = sum(
+        i.gst_amount or 0
+        for i in invoices
+    )
+
+    gst_input = sum(
+        b.gst_amount or 0
+        for b in bills
+    )
+
+    gst_payable = (
+        gst_collected -
+        gst_input
     )
 
     return {
@@ -916,13 +862,23 @@ async def reports_summary(
             compliance["status"],
 
         "gst_status":
-            "Compliant",
+            "Payable"
+            if gst_payable > 0
+            else "Refund"
+            if gst_payable < 0
+            else "Balanced",
 
         "health_score":
             95,
 
         "gst_collected":
-            gst_collected
+            round(gst_collected, 2),
+
+        "gst_input":
+            round(gst_input, 2),
+
+        "gst_payable":
+            round(gst_payable, 2)
     }
 
 # Run the app

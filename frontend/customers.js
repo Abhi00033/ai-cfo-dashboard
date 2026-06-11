@@ -135,6 +135,11 @@ async function editCustomer(id) {
         editingCustomerId = id;
 
         document.getElementById(
+            "saveCustomerBtn"
+        ).innerText =
+            "Update Customer";
+
+        document.getElementById(
             "customerName"
         ).value =
             customer.name || "";
@@ -232,6 +237,15 @@ function closeCustomerModal() {
 
 async function saveCustomer() {
 
+    const saveBtn =
+        document.getElementById(
+            "saveCustomerBtn"
+        );
+
+    if (saveBtn.disabled) {
+        return;
+    }
+
     const payload = {
 
         name:
@@ -255,6 +269,19 @@ async function saveCustomer() {
             ).value.trim()
     };
 
+    if (
+        payload.phone &&
+        payload.phone.length !== 10
+    ) {
+
+        showToast(
+            "Phone number must be 10 digits",
+            true
+        );
+
+        return;
+    }
+
     if (!payload.name) {
 
         showToast(
@@ -265,13 +292,26 @@ async function saveCustomer() {
         return;
     }
 
+    const isEdit =
+        editingCustomerId !== null;
+
     try {
 
-        const url = editingCustomerId
+        saveBtn.disabled = true;
+
+        saveBtn.innerHTML = `
+            <span
+                class="spinner-border spinner-border-sm me-2"
+                role="status">
+            </span>
+            ${isEdit ? "Updating..." : "Saving..."}
+        `;
+
+        const url = isEdit
             ? `${API}/customers/${editingCustomerId}`
             : `${API}/customers`;
 
-        const method = editingCustomerId
+        const method = isEdit
             ? "PUT"
             : "POST";
 
@@ -312,11 +352,6 @@ async function saveCustomer() {
             "customerGSTIN"
         ).value = "";
 
-        const isEdit =
-            editingCustomerId !== null;
-
-        editingCustomerId = null;
-
         closeCustomerModal();
 
         await loadCustomers();
@@ -335,6 +370,13 @@ async function saveCustomer() {
             "Failed to save customer",
             true
         );
+
+    } finally {
+
+        saveBtn.disabled = false;
+
+        saveBtn.innerHTML =
+            "Save Customer";
     }
 }
 
@@ -409,5 +451,15 @@ document
                 "#customerModal .modal-title"
             ).innerText =
                 "Add Customer";
+
+            const saveBtn =
+                document.getElementById(
+                    "saveCustomerBtn"
+                );
+
+            saveBtn.disabled = false;
+
+            saveBtn.innerText =
+                "Save Customer";
         }
     );

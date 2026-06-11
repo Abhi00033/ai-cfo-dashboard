@@ -10,43 +10,171 @@ Created by **Smart Solutions Team**
 
 ### Financial Dashboard
 
-- Revenue Tracking
-- Cash Flow Monitoring
-- Expense Analysis
-- Profit Margin Calculation
+* Revenue Tracking
+* Expense Tracking
+* Cash Flow Monitoring
+* Profit Margin Analysis
+* Business Health Metrics
+
+---
 
 ### Transaction Management
 
-- Create Transactions
-- View Transactions
-- Delete Transactions
-- SQLite Database Storage
+* Create Transactions
+* View Transactions
+* Delete Transactions
+* Income & Expense Categorization
+* Financial Data Storage
 
-### AI Financial Assistant
+---
 
-- Powered by Groq LLM
-- Model: `llama-3.3-70b-versatile`
-- Context-aware financial insights
-- Uses live dashboard and transaction data
-- Smart fallback responses if LLM is unavailable
+### Customer Management
+
+* Create Customers
+* Update Customers
+* View Customers
+* Delete Customers
+* GSTIN Management
+
+---
+
+### Vendor Management
+
+* Create Vendors
+* Update Vendors
+* View Vendors
+* Delete Vendors
+* GSTIN Management
+
+---
+
+### Invoice Management
+
+* Create Invoices
+* Update Invoices
+* View Invoices
+* Delete Invoices
+* GST Calculation
+* Invoice Status Tracking
+
+---
+
+### Bill Management
+
+* Create Bills
+* Update Bills
+* View Bills
+* Delete Bills
+* GST Calculation
+* Vendor Liability Tracking
+
+---
+
+### GST Center
+
+* Output GST Calculation
+* Input GST Calculation
+* GST Payable Calculation
+* GST Status Monitoring
+* GST Compliance Readiness
+
+#### GST Formula
+
+```text
+Output GST = Invoice GST
+
+Input GST = Bill GST
+
+GST Payable = Output GST - Input GST
+```
+
+---
 
 ### Compliance Monitoring
 
-- GST Filing Status
-- Compliance Risk Score
-- Compliance Alerts
+* Compliance Score
+* GST Filing Readiness
+* Compliance Alerts
+* Risk Assessment
+* Audit Readiness Checks
+
+Compliance uses:
+
+* Invoices
+* Bills
+* Fraud Detection Results
+
+---
 
 ### Fraud Detection
 
-- Fraud Risk Assessment
-- Flagged Transaction Monitoring
-- Risk Recommendations
+* Machine Learning Based Detection
+* Isolation Forest Model
+* Suspicious Transaction Identification
+* Fraud Risk Score
+* Fraud Recommendations
+
+---
 
 ### Analytics
 
-- Revenue Trends
-- Expense Trends
-- Financial Reporting APIs
+* Revenue Trends
+* Expense Trends
+* Cash Flow Analysis
+* Financial Insights
+* Expense Breakdown
+* Smart Business Alerts
+
+---
+
+### Business Reports
+
+* Revenue Summary
+* Expense Summary
+* Cash Flow Summary
+* Profit Margin Analysis
+* GST Summary
+* Fraud Status
+* Compliance Status
+
+---
+
+### AI CFO Assistant
+
+Powered by Groq LLM
+
+Model:
+
+```text
+llama-3.3-70b-versatile
+```
+
+Capabilities:
+
+* Revenue Analysis
+* Expense Analysis
+* Cash Flow Analysis
+* Profitability Review
+* Customer Analysis
+* Vendor Analysis
+* Invoice Analysis
+* Bill Analysis
+* GST Review
+* Compliance Review
+* Fraud Risk Assessment
+* Business Health Assessment
+
+Uses live business data from:
+
+* Dashboard
+* Transactions
+* Customers
+* Vendors
+* Invoices
+* Bills
+* GST Center
+* Compliance Engine
+* Fraud Detection Engine
 
 ---
 
@@ -54,28 +182,34 @@ Created by **Smart Solutions Team**
 
 ### Backend
 
-- FastAPI
-- Uvicorn
-- SQLAlchemy
-- SQLite
-- Pydantic
+* FastAPI
+* Uvicorn
+* SQLAlchemy
+* SQLite
+* Pydantic
+
+---
 
 ### Data & Analytics
 
-- Pandas
-- NumPy
-- Scikit-Learn
-- Joblib
+* Pandas
+* NumPy
+* Scikit-Learn
+* Joblib
+
+---
 
 ### AI & LLM
 
-- Groq API
-- Llama 3.3 70B Versatile
+* Groq API
+* Llama 3.3 70B Versatile
 
-### Utilities
+---
 
-- Python Dotenv
-- HTTPX
+### Database
+
+* SQLite
+* SQLAlchemy ORM
 
 ---
 
@@ -86,6 +220,18 @@ Created by **Smart Solutions Team**
 ```bash
 git clone <repository-url>
 cd ai-cfo-platform/backend
+```
+
+### Create Virtual Environment
+
+```bash
+python -m venv venv
+```
+
+Activate Virtual Environment:
+
+```bash
+venv\Scripts\activate
 ```
 
 ### Install Dependencies
@@ -100,7 +246,7 @@ pip install -r requirements.txt
 GROQ_API_KEY=your_groq_api_key_here
 ```
 
-Get your API Key from:
+Get your API key from:
 
 https://console.groq.com/keys
 
@@ -109,10 +255,10 @@ https://console.groq.com/keys
 ## Run Backend
 
 ```bash
-python app.py
+uvicorn app:app --reload
 ```
 
-Server runs at:
+Server:
 
 ```text
 http://localhost:8000
@@ -128,7 +274,7 @@ http://localhost:8000/docs
 
 ## Database
 
-Database: SQLite
+Database File:
 
 ```text
 ai_cfo.db
@@ -140,14 +286,6 @@ Managed using SQLAlchemy ORM.
 
 ## API Endpoints
 
-### Health Check
-
-```http
-GET /
-```
-
----
-
 ### Dashboard
 
 ```http
@@ -156,10 +294,10 @@ GET /dashboard
 
 Returns:
 
-- Revenue
-- Cash Flow
-- Expenses
-- Profit Margin
+* Revenue
+* Expenses
+* Cash Flow
+* Profit Margin
 
 ---
 
@@ -173,37 +311,98 @@ DELETE /transactions/{id}
 
 ---
 
-### Analytics
+### Customers
 
 ```http
-GET /analytics
+GET /customers
+POST /customers
+PUT /customers/{id}
+DELETE /customers/{id}
 ```
-
-Returns chart-ready revenue and expense data.
 
 ---
 
-### Statistics
+### Vendors
 
 ```http
-GET /stats
+GET /vendors
+POST /vendors
+PUT /vendors/{id}
+DELETE /vendors/{id}
+```
+
+---
+
+### Invoices
+
+```http
+GET /invoices
+POST /invoices
+PUT /invoices/{id}
+DELETE /invoices/{id}
+```
+
+---
+
+### Bills
+
+```http
+GET /bills
+POST /bills
+PUT /bills/{id}
+DELETE /bills/{id}
+```
+
+---
+
+### GST Center
+
+```http
+GET /gst/summary
 ```
 
 Returns:
 
-- Total Transactions
-- Total Income
-- Total Expenses
+* Output GST
+* Input GST
+* GST Payable
+* Invoice Count
+* Bill Count
+* Compliance Score
 
 ---
 
-### Categories
+### Analytics
 
 ```http
-GET /categories
+GET /analytics
+GET /analytics/insights
 ```
 
-Returns available transaction categories.
+Returns:
+
+* Revenue Trends
+* Expense Trends
+* Financial Insights
+* Smart Alerts
+
+---
+
+### Reports
+
+```http
+GET /reports/summary
+```
+
+Returns:
+
+* Revenue
+* Expenses
+* Cash Flow
+* Profit Margin
+* GST Summary
+* Fraud Status
+* Compliance Status
 
 ---
 
@@ -215,10 +414,11 @@ GET /compliance/check
 
 Returns:
 
-- Compliance Status
-- GST Filing Status
-- Risk Score
-- Alerts
+* Compliance Status
+* Compliance Score
+* GST Readiness
+* Risk Score
+* Alerts
 
 ---
 
@@ -230,9 +430,10 @@ GET /fraud/detect
 
 Returns:
 
-- Fraud Score
-- Risk Status
-- Recommendations
+* Fraud Score
+* Fraud Status
+* Flagged Transactions
+* Recommendations
 
 ---
 
@@ -246,7 +447,7 @@ Request:
 
 ```json
 {
-  "query": "How is my cash flow performing?"
+  "query": "Give me a complete business health review"
 }
 ```
 
@@ -254,66 +455,48 @@ Response:
 
 ```json
 {
-  "response": "Your cash flow is healthy...",
-  "timestamp": "2026-06-05T10:30:00",
+  "response": "Your business shows healthy cash flow and strong profitability...",
+  "timestamp": "2026-06-12T10:30:00",
   "model": "llama-3.3-70b-versatile"
 }
 ```
 
 ---
 
-### Sample Data
-
-```http
-GET /seed
-```
-
-Inserts demo transactions.
-
----
-
-### Reset Database
-
-```http
-GET /reset
-```
-
-Clears all transactions.
-
----
-
 ## AI Assistant Workflow
 
-1. Reads current dashboard metrics
-2. Reads transaction history
-3. Builds financial context
-4. Sends context to Groq LLM
-5. Generates CFO-style financial recommendations
-6. Returns concise business insights
-
-If the LLM is unavailable:
-
-- Fallback financial responses are returned
-- Application continues functioning normally
+1. Reads Dashboard Metrics
+2. Reads Transactions
+3. Reads Customers
+4. Reads Vendors
+5. Reads Invoices
+6. Reads Bills
+7. Reads GST Summary
+8. Reads Compliance Status
+9. Reads Fraud Analysis
+10. Generates CFO-Level Recommendations
 
 ---
 
 ## Future Improvements
 
-- User Authentication
-- Multi-User Accounts
-- PostgreSQL Support
-- Financial Forecasting
-- PDF Report Generation
-- Real-Time Notifications
-- Advanced Fraud Detection Models
+* User Authentication
+* Multi-Tenant Architecture
+* PostgreSQL Support
+* PDF Report Generation
+* Excel Export
+* Financial Forecasting
+* Budget Planning
+* Real-Time Notifications
+* Advanced AI Insights
+* Predictive Cash Flow Modeling
 
 ---
 
 ## Project
 
-AI CFO Platform
+**AI CFO Platform**
 
-Built for financial analytics, compliance monitoring, and AI-powered business insights.
+AI-powered financial analytics, accounting management, GST tracking, compliance monitoring, fraud detection, and intelligent business insights.
 
 Created by **Smart Solutions Team**

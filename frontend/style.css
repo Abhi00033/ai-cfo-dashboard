@@ -54,24 +54,51 @@ body {
 
 /* Sidebar */
 
-
 .sidebar {
     width: 260px;
     height: 100vh;
+
     position: fixed;
     left: 0;
     top: 0;
-    background: linear-gradient(180deg,
-            #0f172a,
-            #1e293b);
+
+    background: linear-gradient(
+        180deg,
+        #0f172a,
+        #1e293b
+    );
+
     color: white;
 
     padding: 20px;
 
     display: flex;
     flex-direction: column;
+
+    overflow: hidden;
 }
 
+.sidebar nav {
+    flex: 1;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    margin-bottom: 80px;
+}
+
+.sidebar nav::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar nav::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.25);
+    border-radius: 20px;
+}
+
+.sidebar nav::-webkit-scrollbar-track {
+    background: transparent;
+}
 /* .sidebar nav {
     flex: 1;
     overflow-y: auto;
@@ -137,17 +164,17 @@ body {
 
 
 .user-info {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    right: 20px;
+    margin-top: auto;
 
     display: flex;
     align-items: center;
     gap: 12px;
 
     padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+
+    border-top: 1px solid rgba(255,255,255,.2);
+
+    flex-shrink: 0;
 }
 
 .avatar {

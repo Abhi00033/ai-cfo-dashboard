@@ -21,39 +21,62 @@
                 <h2>🤖 AI CFO</h2>
             </div>
             <nav>
+
                 <a href="index.html" class="nav-item">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
                 </a>
 
                 <a href="analytics.html" class="nav-item">
-                    <i class="fas fa-chart-bar"></i> Analytics
+                    <i class="fas fa-chart-bar"></i>
+                    Analytics
                 </a>
 
                 <a href="transactions.html" class="nav-item">
-                    <i class="fas fa-file-invoice"></i> Transactions
+                    <i class="fas fa-exchange-alt"></i>
+                    Transactions
                 </a>
 
                 <a href="customers.html" class="nav-item">
-                    <i class="fas fa-users"></i> Customers
+                    <i class="fas fa-users"></i>
+                    Customers
                 </a>
 
-                <a href="compliance.html" class="nav-item">
-                    <i class="fas fa-shield-alt"></i> Compliance
+                <a href="vendors.html" class="nav-item">
+                    <i class="fas fa-building"></i>
+                    Vendors
+                </a>
+
+                <a href="invoices.html" class="nav-item">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    Invoices
+                </a>
+
+                <a href="bills.html" class="nav-item">
+                    <i class="fas fa-receipt"></i>
+                    Bills
                 </a>
 
                 <a href="gst.html" class="nav-item">
-                    <i class="fas fa-file-invoice-dollar"></i>
+                    <i class="fas fa-percent"></i>
                     GST Center
                 </a>
 
-                 <a href="reports.html" class="nav-item">
+                <a href="compliance.html" class="nav-item">
+                    <i class="fas fa-shield-alt"></i>
+                    Compliance
+                </a>
+
+                <a href="reports.html" class="nav-item">
                     <i class="fas fa-chart-pie"></i>
                     Reports
                 </a>
 
-                <a href="assistant.html" class="nav-item active">
-                    <i class="fas fa-robot"></i> AI Assistant
+                <a href="assistant.html" class="nav-item">
+                    <i class="fas fa-robot"></i>
+                    AI Assistant
                 </a>
+
             </nav>
             <div class="user-info">
                 <div class="avatar">🚀</div>
@@ -147,7 +170,7 @@
                     <div id="chat-messages" class="chat-messages">
                     </div>
 
-                     <div class="chat-input">
+                    <div class="chat-input">
 
                         <input type="text" id="chat-input" class="form-control" placeholder="Ask about finances...">
 
@@ -235,8 +258,6 @@
 
                 <div class="modal-body">
 
-                    <!-- Manual Transaction -->
-
                     <input type="number" id="txAmount" class="form-control mb-3" placeholder="Amount">
 
                     <select id="txCategory" class="form-select mb-3">
@@ -254,7 +275,7 @@
 
                     <input type="text" id="txDescription" class="form-control mb-3" placeholder="Description">
 
-                    <select id="txType" class="form-select">
+                    <select id="txType" class="form-select mb-3" onchange="toggleTransactionParty()">
 
                         <option value="income">
                             Income
@@ -266,7 +287,33 @@
 
                     </select>
 
-                    <!-- Divider -->
+                    <!-- Customer Dropdown -->
+
+                    <div id="customerWrapper" class="mb-3">
+
+                        <select id="customerId" class="form-select">
+
+                            <option value="">
+                                Select Customer
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <!-- Vendor Dropdown -->
+
+                    <div id="vendorWrapper" class="mb-3 d-none">
+
+                        <select id="vendorId" class="form-select">
+
+                            <option value="">
+                                Select Vendor
+                            </option>
+
+                        </select>
+
+                    </div>
 
                     <div class="text-center my-4">
 
@@ -276,12 +323,12 @@
                 position: relative;
                 top: -22px;
             ">
+
                             OR
+
                         </span>
 
                     </div>
-
-                    <!-- CSV Upload -->
 
                     <div class="text-center">
 
@@ -294,23 +341,37 @@
                         <div class="d-flex justify-content-center gap-2">
 
                             <button type="button" class="btn btn-outline-primary" onclick="downloadCSVTemplate()">
+
                                 Download Template
+
                             </button>
 
                             <button type="button" id="uploadCsvBtn" class="btn btn-success" onclick="uploadCSV()">
+
                                 Upload CSV
+
                             </button>
 
                         </div>
 
                         <small class="text-muted d-block mt-3">
+
                             CSV Format:
-                            amount, category, description, type
+
+                            amount,category,description,type,customer_id,vendor_id
+
                         </small>
 
                         <small class="text-muted d-block">
-                            Valid types:
-                            income, expense
+
+                            Income → customer_id required
+
+                        </small>
+
+                        <small class="text-muted d-block">
+
+                            Expense → vendor_id required
+
                         </small>
 
                     </div>
@@ -323,8 +384,10 @@
                         Cancel
                     </button>
 
-                    <button type="button" class="btn btn-primary" onclick="saveTransaction()">
+                    <button type="button" class="btn btn-primary" id="saveTransactionBtn" onclick="saveTransaction()">
+
                         Save Transaction
+
                     </button>
 
                 </div>
