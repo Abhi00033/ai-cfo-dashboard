@@ -116,6 +116,11 @@
                     <button id="refreshBtn" onclick="refreshDashboard()" class="btn-refresh">
                         🔄 Refresh
                     </button>
+                    <button onclick="openRegulatoryNewsModal()" class="btn-refresh">
+
+                        📰 Latest Updates
+
+                    </button>
                     <button id="themeToggle" class="btn-refresh">
 
                         🌙
@@ -215,6 +220,36 @@
                     <ul id="smartAlerts">
                         <li>Loading...</li>
                     </ul>
+
+                </div>
+
+                <div class="chart-card">
+
+                    <div class="card-header">
+
+                        <h3>
+                            📰 Regulatory Updates
+                        </h3>
+
+                    </div>
+
+                    <div id="regulatoryNews">
+
+                        <div class="loading">
+                            Loading updates...
+                        </div>
+
+                    </div>
+
+                    <div class="text-center mt-3">
+
+                        <button class="btn btn-outline-primary" onclick="openRegulatoryNewsModal()">
+
+                            View All Updates
+
+                        </button>
+
+                    </div>
 
                 </div>
 
@@ -512,6 +547,37 @@
                         </button>
 
                     </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="modal fade" id="regulatoryNewsModal" tabindex="-1">
+
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title">
+
+                        📰 Regulatory Updates
+
+                    </h5>
+
+                    <button type="button" class="btn-close" data-bs-dismiss="modal">
+                    </button>
+
+                </div>
+
+                <div class="modal-body" id="regulatoryNewsModalBody">
+
+                    Loading...
 
                 </div>
 

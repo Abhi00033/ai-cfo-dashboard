@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
+from apscheduler.schedulers.background import BackgroundScheduler
 import uvicorn
 from pydantic import BaseModel
 from typing import Optional
@@ -18,6 +19,16 @@ from sqlalchemy.orm import Session
 from ml.fraud_detection import fraud_detector
 
 
+
+from models import (
+    TransactionModel,
+    RegulatoryNewsModel,
+    get_db
+)
+
+from services.news_service import (
+    fetch_regulatory_news
+)
 from routes.customers import router as customer_router
 from routes.transactions import router as transaction_router
 from routes.vendors import router as vendor_router
@@ -425,6 +436,22 @@ async def ai_assistant( query: AIQuery,db: Session = Depends(get_db)):
 
         gst = await gst_summary(db)
 
+        latest_news = (
+            db.query(
+                RegulatoryNewsModel
+            )
+            .order_by(
+                RegulatoryNewsModel.created_at.desc()
+            )
+            .limit(5)
+            .all()
+        )
+
+        news_context = "\n".join([
+            f"- {n.category}: {n.title}"
+            for n in latest_news
+        ])
+
         customer_data = [
             {
                 "id": c.id,
@@ -524,6 +551,10 @@ async def ai_assistant( query: AIQuery,db: Session = Depends(get_db)):
         Input GST: ₹{gst['gst_input']:,.2f}
         GST Payable: ₹{gst['gst_payable']:,.2f}
         GST Status: {gst['status']}
+
+        LATEST REGULATORY NEWS
+
+        {news_context}
 
         TRANSACTIONS
 
@@ -880,6 +911,150 @@ async def reports_summary(
         "gst_payable":
             round(gst_payable, 2)
     }
+
+def refresh_news_job():
+
+    db = next(get_db())
+
+    try:
+
+        data = fetch_regulatory_news()
+
+        if data.get("status") != "ok":
+            print("News API Error")
+            return
+
+        db.query(
+            RegulatoryNewsModel
+        ).delete()
+
+        for article in data.get(
+            "articles",
+            []
+        ):
+
+            title = article.get(
+                "title",
+                ""
+            )
+
+            lower_title = title.lower()
+
+            if "gst" in lower_title:
+                category = "GST"
+
+            elif "tax" in lower_title:
+                category = "Tax"
+
+            elif "rbi" in lower_title:
+                category = "RBI"
+
+            elif "sebi" in lower_title:
+                category = "SEBI"
+
+            elif "compliance" in lower_title:
+                category = "Compliance"
+
+            else:
+                category = "Finance"
+
+            db.add(
+                RegulatoryNewsModel(
+                    title=title,
+                    category=category,
+                    source=article.get(
+                        "source",
+                        {}
+                    ).get(
+                        "name",
+                        "Unknown"
+                    ),
+                    summary=article.get(
+                        "description"
+                    ),
+                    impact="Medium",
+                    published_date=article.get(
+                        "publishedAt"
+                    ),
+                    url=article.get(
+                        "url"
+                    )
+                )
+            )
+
+        db.commit()
+
+        print(
+            "✅ Regulatory news refreshed"
+        )
+
+    except Exception as e:
+
+        print(
+            f"News refresh failed: {e}"
+        )
+
+    finally:
+
+        db.close()
+
+
+@app.post("/regulatory-news/refresh")
+async def refresh_regulatory_news():
+
+    refresh_news_job()
+
+    return {
+        "message":
+        "Regulatory news updated successfully"
+    }
+
+@app.get("/regulatory-news")
+async def get_regulatory_news(
+    db: Session = Depends(get_db)
+):
+
+    news = db.query(
+        RegulatoryNewsModel
+    ).order_by(
+        RegulatoryNewsModel.created_at.desc()
+    ).limit(10).all()
+
+    return [
+        {
+            "title": item.title,
+            "category": item.category,
+            "source": item.source,
+            "summary": item.summary,
+            "impact": item.impact,
+            "url": item.url,
+            "published_date":
+                item.published_date
+        }
+        for item in news
+    ]
+
+
+scheduler = BackgroundScheduler()
+
+@app.on_event("startup")
+async def startup_event():
+
+    if not scheduler.running:
+
+        refresh_news_job()
+
+        scheduler.add_job(
+            refresh_news_job,
+            "interval",
+            hours=12,
+            id="regulatory_news_refresh",
+            replace_existing=True
+        )
+
+        scheduler.start()
+
+        print("✅ News scheduler started")
 
 # Run the app
 if __name__ == "__main__":

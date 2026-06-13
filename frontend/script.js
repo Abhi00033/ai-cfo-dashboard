@@ -870,6 +870,8 @@ async function loadDashboardPage() {
 
     loadSmartAlerts();
 
+    await loadRegulatoryNews();
+
     initCharts();
 
     await loadAnalytics();
@@ -3095,3 +3097,137 @@ window.addEventListener(
 
     }
 );
+
+
+let regulatoryNewsData = [];
+
+async function loadRegulatoryNews() {
+
+    const container =
+        document.getElementById(
+            "regulatoryNews"
+        );
+
+    if (!container) return;
+
+    try {
+
+        const response =
+            await fetch(
+                `${CONFIG.API_BASE_URL}/regulatory-news`
+            );
+
+        regulatoryNewsData =
+            await response.json();
+
+        const latestThree =
+            regulatoryNewsData.slice(0, 2);
+
+        container.innerHTML =
+            latestThree.map(item => `
+
+                <div class="news-item">
+
+                    <span
+                        class="news-category">
+
+                        ${item.category}
+
+                    </span>
+
+                    <h5>
+                        ${item.title}
+                    </h5>
+
+                    <p>
+                        ${item.summary || ""}
+                    </p>
+
+                </div>
+
+            `).join('');
+
+    } catch (error) {
+
+        console.error(error);
+
+        container.innerHTML =
+            "Failed to load updates";
+    }
+}
+
+function openRegulatoryNewsModal() {
+
+    const modalBody =
+        document.getElementById(
+            "regulatoryNewsModalBody"
+        );
+
+    modalBody.innerHTML =
+        regulatoryNewsData.map(item => `
+
+            <div class="news-item">
+
+                <div
+                    class="d-flex justify-content-between">
+
+                    <span
+                        class="badge bg-primary">
+
+                        ${item.category}
+
+                    </span>
+
+                    <small>
+
+                        ${item.published_date
+                ?.split("T")[0] || ""}
+
+                    </small>
+
+                </div>
+
+                <h5 class="mt-2">
+
+                    ${item.title}
+
+                </h5>
+
+                <p>
+
+                    ${item.summary || ""}
+
+                </p>
+
+                <div
+                    class="d-flex justify-content-between align-items-center">
+
+                    <small>
+
+                        ${item.source}
+
+                    </small>
+
+                    <a
+                        href="${item.url}"
+                        target="_blank"
+                        class="btn btn-sm btn-primary">
+
+                        Read Full Article
+
+                    </a>
+
+                </div>
+
+                <hr>
+
+            </div>
+
+        `).join('');
+
+    new bootstrap.Modal(
+        document.getElementById(
+            "regulatoryNewsModal"
+        )
+    ).show();
+}

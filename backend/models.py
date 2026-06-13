@@ -64,6 +64,34 @@ class TransactionModel(Base):
     )
 
 
+class RegulatoryNewsModel(Base):
+    __tablename__ = "regulatory_news"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    title = Column(String)
+
+    category = Column(String)
+
+    source = Column(String)
+
+    summary = Column(String)
+
+    impact = Column(String)
+
+    published_date = Column(String)
+
+    url = Column(String)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
 try:
     import models_accounting
 except ImportError:
